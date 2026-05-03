@@ -312,7 +312,7 @@ def run_experiment() -> None:
     assert all(0.0 <= p <= 1.0 for p in smoke_proba), "Probabilidades fuera de [0,1]"
     assert set(smoke_pred).issubset({0, 1}), "Predicciones fuera de {0,1}"
 
-    print("\n✅ Smoke test del .joblib: OK")
+    print("\n Smoke test del .joblib: OK")
     print(f"   Predicciones: {smoke_pred.tolist()}")
     print(f"   Probabilidades: {[round(p, 4) for p in smoke_proba.tolist()]}")
 

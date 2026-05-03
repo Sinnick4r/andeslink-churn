@@ -105,7 +105,7 @@ def evaluate_on_test(
 
     with open(METRICS_PATH, "w") as f:
         json.dump(metrics, f, indent=2)
-    print(f"\n✅ Métricas guardadas en {METRICS_PATH}")
+    print(f"\n metricas guardadas en {METRICS_PATH}")
 
     return metrics
 
@@ -197,7 +197,7 @@ def plot_evaluation(
     output_path = REPORTS_DIR / "eda_07_evaluation_test.png"
     plt.savefig(output_path, dpi=150, bbox_inches="tight")
     plt.show()
-    print(f"✅ Gráfico guardado en {output_path}")
+    print(f"grafico guardado en {output_path}")
 
 
 #entry point
