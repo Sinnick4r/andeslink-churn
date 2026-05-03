@@ -70,7 +70,7 @@ def find_optimal_threshold(
     return float(thresholds[best_idx])
 
 
-#Configuración de modelos
+#Config de modelos
 
 def get_model_configs() -> dict[str, dict[str, Any]]:
   #Define los 3 modelos a comparar c
@@ -191,7 +191,7 @@ def train_and_evaluate(
     }
 
 
-# ── Experimento principal ─────────────────────────────────────────────────────
+# Training principal 
 
 
 def run_experiment() -> None:
@@ -273,7 +273,7 @@ def run_experiment() -> None:
                 best_pipeline = results["pipeline"]
                 best_threshold = results["threshold"]
 
-    # ── Serialización del mejor modelo ────────────────────────────────────
+    # serializacion del mejor modelo
     assert best_pipeline is not None, "Ningún modelo fue entrenado correctamente"
 
     model_path = MODEL_DIR / MODEL_FILENAME
@@ -288,7 +288,7 @@ def run_experiment() -> None:
     print(f"SHA-256: {model_hash[:24]}...")
     print(f"{'=' * 55}")
 
-    # ── Run de resumen en MLflow ───────────────────────────────────────────
+    # run de resumen en MLflow
     with mlflow.start_run(run_name=f"WINNER_{best_model_name}"):
         mlflow.log_param("winner_model", best_model_name)
         mlflow.log_param("optimal_threshold", best_threshold)
@@ -302,7 +302,7 @@ def run_experiment() -> None:
             json.dump(all_results, f, indent=2)
         mlflow.log_artifact(str(metrics_path))
 
-    # ── Smoke test del artefacto serializado ──────────────────────────────
+    # smoke test del artefacto serializado 
     loaded_pipeline: Pipeline = joblib.load(model_path)
     smoke_input = X_val.iloc[:5]
     smoke_pred = loaded_pipeline.predict(smoke_input)
