@@ -1,0 +1,11 @@
+{
+  "model": "models\\churn_model_v1.joblib",
+  "threshold": 0.441,
+  "test_size": 1000,
+  "f1": 0.6014,
+  "roc_auc": 0.7561,
+  "pr_auc": 0.6155,
+  "precision_class1": 0.4872,
+  "recall_class1": 0.7853,
+  "support_class1": 340
+}
