@@ -21,6 +21,9 @@ dependencies:
   - joblib=1.4
   - pip
   - pip:
+    - pathspec==0.12.1
+    - dvc==3.55.2
+    - prometheus-fastapi-instrumentator==7.0.0
     - prometheus-fastapi-instrumentator==7.0.0
     - prometheus-client==0.21.0
     - evidently==0.4.33

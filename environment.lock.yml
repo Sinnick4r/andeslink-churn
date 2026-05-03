@@ -266,7 +266,6 @@ dependencies:
   - paramiko=4.0.0
   - parso=0.8.6
   - pathlib2=2.3.7.post1
-  - pathspec=1.1.1
   - patsy=1.0.2
   - pcre2=10.47
   - pillow=11.3.0
@@ -435,6 +434,7 @@ dependencies:
       - opentelemetry-proto==1.41.1
       - opentelemetry-sdk==1.41.1
       - opentelemetry-semantic-conventions==0.62b1
+      - pathspec==0.12.1
       - plotly==6.7.0
       - polyfactory==3.3.0
       - prometheus-client==0.21.0
