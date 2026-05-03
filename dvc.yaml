@@ -1,0 +1,43 @@
+stages:
+  prepare:
+    cmd: python -m src.data
+    deps:
+      - data/raw/churn_sintetico.csv
+      - src/data.py
+      - src/features.py
+    params:
+      - params.yaml:
+          - split.test_size
+          - split.val_size
+          - split.random_seed
+
+  train:
+    cmd: python -m src.train
+    deps:
+      - data/raw/churn_sintetico.csv
+      - src/train.py
+      - src/data.py
+      - src/features.py
+    params:
+      - params.yaml:
+          - split.random_seed
+          - train.n_estimators
+          - train.max_depth
+    outs:
+      - models/churn_model_v1.joblib
+    metrics:
+      - reports/train_metrics.json:
+          cache: false
+
+  evaluate:
+    cmd: python -m src.evaluate
+    deps:
+      - src/evaluate.py
+      - src/data.py
+      - models/churn_model_v1.joblib
+    metrics:
+      - reports/test_metrics.json:
+          cache: false
+    plots:
+      - reports/eda_07_evaluation_test.png:
+          cache: false

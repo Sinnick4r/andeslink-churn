@@ -1,0 +1,79 @@
+schema: '2.0'
+stages:
+  prepare:
+    cmd: python -m src.data
+    deps:
+    - path: data/raw/churn_sintetico.csv
+      hash: md5
+      md5: b8541379ed614873c48ec17bded142ac
+      size: 342760
+    - path: src/data.py
+      hash: md5
+      md5: aaa62b25a04b77e62dcfa43677b1b230
+      size: 4551
+    - path: src/features.py
+      hash: md5
+      md5: 06d6a80c0202bbd90707c57af2af7008
+      size: 8677
+    params:
+      params.yaml:
+        split.random_seed: 42
+        split.test_size: 0.2
+        split.val_size: 0.2
+  train:
+    cmd: python -m src.train
+    deps:
+    - path: data/raw/churn_sintetico.csv
+      hash: md5
+      md5: b8541379ed614873c48ec17bded142ac
+      size: 342760
+    - path: src/data.py
+      hash: md5
+      md5: aaa62b25a04b77e62dcfa43677b1b230
+      size: 4551
+    - path: src/features.py
+      hash: md5
+      md5: 06d6a80c0202bbd90707c57af2af7008
+      size: 8677
+    - path: src/train.py
+      hash: md5
+      md5: 2d09dd92d91ded7aab53d78cb72abff7
+      size: 11322
+    params:
+      params.yaml:
+        split.random_seed: 42
+        train.max_depth: 12
+        train.n_estimators: 200
+    outs:
+    - path: models/churn_model_v1.joblib
+      hash: md5
+      md5: a00a2f96c89ee5d317ed79c3d8f62607
+      size: 7175
+    - path: reports/train_metrics.json
+      hash: md5
+      md5: 4d213f5f92da43dfc824b397e33e5fb1
+      size: 547
+  evaluate:
+    cmd: python -m src.evaluate
+    deps:
+    - path: models/churn_model_v1.joblib
+      hash: md5
+      md5: a00a2f96c89ee5d317ed79c3d8f62607
+      size: 7175
+    - path: src/data.py
+      hash: md5
+      md5: aaa62b25a04b77e62dcfa43677b1b230
+      size: 4551
+    - path: src/evaluate.py
+      hash: md5
+      md5: cb15e07c933b4848879fa5ac42322046
+      size: 6294
+    outs:
+    - path: reports/eda_07_evaluation_test.png
+      hash: md5
+      md5: d5bfef161037ec6fa91a082d42849004
+      size: 137246
+    - path: reports/test_metrics.json
+      hash: md5
+      md5: 1a2be9f18f84e70b324fe4cf427e0788
+      size: 238
