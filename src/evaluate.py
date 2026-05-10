@@ -40,12 +40,13 @@ METRICS_PATH: Final[Path] = REPORTS_DIR / "test_metrics.json"
 # cargar la data del JSON generado en el train
 
 def _load_winner_info() -> tuple[str, float]:
-    """Lee el ganador (mayor f1_val) y su threshold del train_metrics.json."""
+    #Lee el ganador (mayor f1_val) y su threshold del train_metrics.json.
     metrics_path = REPORTS_DIR / "train_metrics.json"
     with open(metrics_path) as f:
-        all_results = json.load(f)
-    winner = max(all_results, key=lambda m: all_results[m]["f1_val"])
-    return winner, float(all_results[winner]["threshold"])
+        payload = json.load(f)
+    selected_model = payload["selected_model"]
+    threshold = payload["models"][selected_model]["threshold"]
+    return selected_model, float(threshold)
 
 def _load_optimal_threshold(model_name: str = "LogisticRegression") -> float:
     metrics_path = REPORTS_DIR / "train_metrics.json"

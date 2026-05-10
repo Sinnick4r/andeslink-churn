@@ -7,11 +7,6 @@ Modelos comparados:
 - HistGradientBoostingClassifier: gradient boosting nativo de sklearn
 '''
 
-import os
-os.environ["OMP_NUM_THREADS"] = "1"
-os.environ["MKL_NUM_THREADS"] = "1"
-os.environ["OPENBLAS_NUM_THREADS"] = "1"
-
 import hashlib
 import json
 from pathlib import Path
@@ -42,8 +37,14 @@ MODEL_DIR: Final[Path] = Path("models")
 REPORTS_DIR: Final[Path] = Path("reports")
 EXPERIMENT_NAME: Final[str] = "andeslink-churn-e1"
 MODEL_FILENAME: Final[str] = "churn_model_v1.joblib"
+F1_TOLERANCE = 0.005
 
-
+#Ante diferencias despreciables, elijo siempre el modelo mas simple
+MODEL_PRIORITY = {
+    "LogisticRegression": 0,
+    "RandomForest": 1,
+    "HistGradientBoosting": 2,
+}
 # Utils
 
 def compute_model_hash(model_path: Path) -> str:
@@ -223,11 +224,8 @@ def run_experiment() -> None:
 
     model_configs = get_model_configs()
 
-    best_f1: float = 0.0
-    best_model_name: str = ""
-    best_pipeline: Pipeline | None = None
-    best_threshold: float = 0.5
     all_results: dict[str, dict[str, float]] = {}
+    trained_pipelines: dict[str, Pipeline] = {}
 
     # Lloop de training
     for model_name, config in model_configs.items():
@@ -271,14 +269,40 @@ def run_experiment() -> None:
                 "pr_auc_val": results["pr_auc"],
                 "threshold": results["threshold"],
             }
+            trained_pipelines[model_name] = results["pipeline"]
 
             # Actualizar mejor modelo
+            '''
             if results["f1"] > best_f1:
                 best_f1 = results["f1"]
                 best_model_name = model_name
                 best_pipeline = results["pipeline"]
                 best_threshold = results["threshold"]
+            '''
+    best_f1_absolute = max(result["f1_val"] for result in all_results.values())
 
+    candidate_names = [
+    name
+    for name, result in all_results.items()
+    if result["f1_val"] >= best_f1_absolute - F1_TOLERANCE
+]
+
+    best_model_name = sorted(
+    candidate_names,
+    key=lambda name: (
+        MODEL_PRIORITY[name],
+        -all_results[name]["roc_auc_val"],
+    ),
+)[0]
+
+    best_pipeline = trained_pipelines[best_model_name]
+    best_f1 = all_results[best_model_name]["f1_val"]
+    best_threshold = all_results[best_model_name]["threshold"]
+    selection_rule = (
+        f"Seleccion por F1 con tolerancia {F1_TOLERANCE}. "
+        "En empate operativo, desempate por simplicidad/interpretabildad "
+        "y luego ROC-AUC."
+    )
     # serializacion del mejor modelo
     assert best_pipeline is not None, "Ningún modelo fue entrenado correctamente"
 
@@ -293,7 +317,15 @@ def run_experiment() -> None:
     print(f"Serializado: {model_path}")
     print(f"SHA-256: {model_hash[:24]}...")
     print(f"{'=' * 55}")
-
+    metrics_payload = {
+        "selected_model": best_model_name,
+        "selection_rule": selection_rule,
+        "f1_tolerance": F1_TOLERANCE,
+        "best_f1_absolute": best_f1_absolute,
+        "candidate_models": candidate_names,
+        "selected_threshold": best_threshold,
+        "models": all_results,
+    }
     # run de resumen en MLflow
     with mlflow.start_run(run_name=f"GANADOR_{best_model_name}"):
         mlflow.log_param("winner_model", best_model_name)
@@ -305,7 +337,7 @@ def run_experiment() -> None:
         # Log comparativa de los 3 modelos como artifact JSON
         metrics_path = REPORTS_DIR / "train_metrics.json"
         with open(metrics_path, "w") as f:
-            json.dump(all_results, f, indent=2)
+            json.dump(metrics_payload, f, indent=2)
         mlflow.log_artifact(str(metrics_path))
 
     # smoke test del artefacto serializado 
