@@ -1,11 +1,12 @@
 {
   "model": "models\\churn_model_v1.joblib",
-  "threshold": 0.441,
+  "model_name": "RandomForest",
+  "threshold": 0.409929,
   "test_size": 1000,
-  "f1": 0.6014,
-  "roc_auc": 0.7561,
-  "pr_auc": 0.6155,
-  "precision_class1": 0.4872,
-  "recall_class1": 0.7853,
+  "f1": 0.5911,
+  "roc_auc": 0.7416,
+  "pr_auc": 0.5927,
+  "precision_class1": 0.4841,
+  "recall_class1": 0.7588,
   "support_class1": 340
 }

@@ -1,7 +1,7 @@
 #data.py
 
 '''
-arga de datos y split estratificado para el modelo de churn
+Carga de datos y split estratificado para el modelo de churn
 
 Split: 64% train / 16% val / 20% test (estratificado por target)
 El split es determinístico: RANDOM_SEED fijo garantiza reproducibilidad
@@ -30,18 +30,8 @@ STRATIFICATION_TOLERANCE: Final[float] = 0.02
 
 
 def load_raw_data(path: Path = DATA_PATH) -> pd.DataFrame:
-    """Carga el CSV original y aplica feature engineering.
+    #Carga el CSV original y aplica feature engineering.
 
-    Args:
-        path: ruta al CSV. Por defecto DATA_PATH.
-
-    Returns:
-        DataFrame con features originales + derivadas.
-
-    Raises:
-        FileNotFoundError: si el CSV no existe en la ruta indicada.
-        ValueError: si el CSV no tiene el formato esperado.
-    """
     if not path.exists():
         raise FileNotFoundError(f"Dataset no encontrado en: {path}")
 
@@ -66,21 +56,12 @@ def split_data(
     df: pd.DataFrame,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame,
            pd.Series, pd.Series, pd.Series]:
-    """Split estratificado en train / val / test (64% / 16% / 20%).
+    '''
+    Split estratificado en train / val / test (64% / 16% / 20%).
 
     La estratificación garantiza que la proporción de churn se mantiene
     en los tres subconjuntos dentro de una tolerancia de ±2%.
-
-    Args:
-        df: DataFrame completo con features y target.
-
-    Returns:
-        Tupla (X_train, X_val, X_test, y_train, y_val, y_test).
-
-    Raises:
-        ValueError: si el DataFrame no tiene el formato esperado.
-        AssertionError: si la estratificación falla.
-    """
+    '''
     if TARGET not in df.columns:
         raise ValueError(f"Columna '{TARGET}' no encontrada")
 
@@ -129,7 +110,7 @@ def report_splits(
     y_val: pd.Series,
     y_test: pd.Series,
 ) -> None:
-    """Imprime un resumen de tamaños y proporción de churn por split."""
+    #Imprime un resumen de tamaños y proporcion de churn por split
     total = len(y_train) + len(y_val) + len(y_test)
     print("=" * 50)
     print("RESUMEN DE SPLITS")

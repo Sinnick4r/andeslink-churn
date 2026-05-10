@@ -7,6 +7,11 @@ Modelos comparados:
 - HistGradientBoostingClassifier: gradient boosting nativo de sklearn
 '''
 
+import os
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+
 import hashlib
 import json
 from pathlib import Path
@@ -20,7 +25,6 @@ import pandas as pd
 from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
-    ConfusionMatrixDisplay,
     average_precision_score,
     classification_report,
     confusion_matrix,
@@ -67,7 +71,7 @@ def find_optimal_threshold(
         / (precisions[:-1] + recalls[:-1] + 1e-8)
     )
     best_idx = int(np.argmax(f1_scores))
-    return float(thresholds[best_idx])
+    return round(float(thresholds[best_idx]), 6)
 
 
 #Config de modelos
@@ -195,13 +199,15 @@ def train_and_evaluate(
 
 
 def run_experiment() -> None:
-    """Ejecuta el experimento completo: 3 modelos, MLflow tracking, serialización.
+    
+    '''
+    Ejecuta el pipeleine completo: 3 modelos, MLflow tracking, serialización.
 
     Side effects:
     - Escribe runs en mlruns/ (MLflow local)
     - Escribe models/churn_model_v1.joblib
     - Escribe reports/train_metrics.json
-    """
+    '''
     # Setup
     MODEL_DIR.mkdir(exist_ok=True)
     REPORTS_DIR.mkdir(exist_ok=True)
@@ -289,12 +295,12 @@ def run_experiment() -> None:
     print(f"{'=' * 55}")
 
     # run de resumen en MLflow
-    with mlflow.start_run(run_name=f"WINNER_{best_model_name}"):
+    with mlflow.start_run(run_name=f"GANADOR_{best_model_name}"):
         mlflow.log_param("winner_model", best_model_name)
         mlflow.log_param("optimal_threshold", best_threshold)
         mlflow.log_param("model_sha256_prefix", model_hash[:16])
         mlflow.log_metric("best_f1_val", best_f1)
-        mlflow.sklearn.log_model(best_pipeline, artifact_path="model")
+        mlflow.sklearn.log_model(best_pipeline, name="model")
 
         # Log comparativa de los 3 modelos como artifact JSON
         metrics_path = REPORTS_DIR / "train_metrics.json"

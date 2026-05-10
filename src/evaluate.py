@@ -3,8 +3,8 @@
 '''
 evaluacion final del modelo sobre el conjunto de test.
 
-pbservaciones:
-*este modulo se corre UNA sola vez, sobre datos nunca vistos en train ni val
+observaciones:
+*esto corre UNA sola vez, sobre datos nunca vistos en train ni val
 
 *no se usa para selección de modelos -> eso se hizo en src/train.py con el
 conjunto de validación.
@@ -37,23 +37,46 @@ MODEL_PATH: Final[Path] = Path("models/churn_model_v1.joblib")
 REPORTS_DIR: Final[Path] = Path("reports")
 METRICS_PATH: Final[Path] = REPORTS_DIR / "test_metrics.json"
 
+# cargar la data del JSON generado en el train
+
+def _load_winner_info() -> tuple[str, float]:
+    """Lee el ganador (mayor f1_val) y su threshold del train_metrics.json."""
+    metrics_path = REPORTS_DIR / "train_metrics.json"
+    with open(metrics_path) as f:
+        all_results = json.load(f)
+    winner = max(all_results, key=lambda m: all_results[m]["f1_val"])
+    return winner, float(all_results[winner]["threshold"])
+
+def _load_optimal_threshold(model_name: str = "LogisticRegression") -> float:
+    metrics_path = REPORTS_DIR / "train_metrics.json"
+    with open(metrics_path) as f:
+        all_results = json.load(f)
+    return float(all_results[model_name]["threshold"])
 
 #eval 
 
 
 def evaluate_on_test(
     model_path: Path = MODEL_PATH,
-    threshold: float = 0.441,  # threshold óptimo encontrado en validación
+    threshold: float | None = None,
+    model_name: str | None = None,
 ) -> dict[str, float]:
-    
-    # prueba el modelo final sobre el conjunto de test -> genera tres visualizaciones y guarda metricas en JSON
+    # cargo el modelo y el threshold ganador
+    if threshold is None or model_name is None:
+        winner, winner_threshold = _load_winner_info()
+        if threshold is None:
+            threshold = winner_threshold
+        if model_name is None:
+            model_name = winner
+        print(f"  Modelo ganador detectado: {model_name}")
 
+    # prueba el modelo final sobre el conjunto de test...
     if not model_path.exists():
         raise FileNotFoundError(
             f"Modelo no encontrado en {model_path}. "
             "Corré src/train.py primero."
         )
-
+    
     REPORTS_DIR.mkdir(exist_ok=True)
 
     #crga todo
@@ -93,6 +116,7 @@ def evaluate_on_test(
 
     metrics = {
         "model": str(model_path),
+        "model_name": model_name,
         "threshold": threshold,
         "test_size": len(y_test),
         "f1": round(f1, 4),
@@ -114,7 +138,8 @@ def evaluate_on_test(
 
 def plot_evaluation(
     model_path: Path = MODEL_PATH,
-    threshold: float = 0.441,
+    threshold: float | None = None,
+    model_name: str | None = None,
 ) -> None:
     #Genera y guarda las tres visualizaciones de evaluación.
     '''
@@ -124,6 +149,13 @@ def plot_evaluation(
         - Precision-Recall curve con area bajo la curva
     '''
         
+    if threshold is None or model_name is None:
+        winner, winner_threshold = _load_winner_info()
+        if threshold is None:
+            threshold = winner_threshold
+        if model_name is None:
+            model_name = winner
+
     if not model_path.exists():
         raise FileNotFoundError(f"Modelo no encontrado en {model_path}")
 
@@ -145,7 +177,7 @@ def plot_evaluation(
         colorbar=False,
     )
     axes[0].set_title(
-        f"Confusion Matrix — Test set\n(threshold = {threshold})",
+        f"Confusion Matrix - Test set\n(threshold = {threshold})",
         fontsize=11, fontweight="bold",
     )
 
@@ -154,10 +186,10 @@ def plot_evaluation(
         y_test, y_proba,
         ax=axes[1],
         color="steelblue",
-        name="LogisticRegression",
+        name=model_name,
     )
     axes[1].plot([0, 1], [0, 1], "k--", linewidth=0.8, label="Random (AUC=0.5)")
-    axes[1].set_title("ROC Curve — Test set", fontsize=11, fontweight="bold")
+    axes[1].set_title("ROC Curve - Test set", fontsize=11, fontweight="bold")
     axes[1].legend(fontsize=9)
 
     # graf. 3: Precision-Recall Curve
@@ -165,7 +197,7 @@ def plot_evaluation(
         y_test, y_proba,
         ax=axes[2],
         color="coral",
-        name="LogisticRegression",
+        name=model_name,
     )
     # baseline: precision = proporcion de positivos
     baseline = float(y_test.mean())
@@ -183,13 +215,13 @@ def plot_evaluation(
         label=f"Threshold = {threshold}",
     )
     axes[2].set_title(
-        "Precision-Recall Curve — Test set",
+        "Precision-Recall Curve - Test set",
         fontsize=11, fontweight="bold",
     )
     axes[2].legend(fontsize=9)
 
     plt.suptitle(
-        "Evaluación final — LogisticRegression | Test set (n=1000)",
+        f"Evaluación final - {model_name} | Test set (n=1000)",
         fontsize=13, fontweight="bold",
     )
     plt.tight_layout()
@@ -202,5 +234,6 @@ def plot_evaluation(
 
 #entry point
 if __name__ == "__main__":
-    metrics = evaluate_on_test()
-    plot_evaluation()
+    winner_name, winner_threshold = _load_winner_info()
+    metrics = evaluate_on_test(threshold=winner_threshold, model_name=winner_name)
+    plot_evaluation(threshold=winner_threshold, model_name=winner_name)

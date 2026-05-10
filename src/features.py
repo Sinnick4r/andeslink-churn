@@ -1,6 +1,6 @@
 '''
 
-pipeline de preprocesamiento y feature engineering para el modelo de churn.
+pipeline de preprocesamiento y feature engineering para el modelo de churn
 
 observaciones:
 
@@ -241,9 +241,4 @@ def _smoke_test() -> None:
 
 
 if __name__ == "__main__":
-    from math import isclose
-    #!!!reemplazar pytest_approx por comparación directa con tolerancia
-    def _approx(a: float, b: float, rel_tol: float = 1e-6) -> bool:
-        return isclose(a, b, rel_tol=rel_tol)
-
     _smoke_test()
