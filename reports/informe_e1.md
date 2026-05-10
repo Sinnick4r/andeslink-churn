@@ -261,27 +261,27 @@ un hallazgo válido del análisis, no un error de modelado.
 
 | Métrica | Valor |
 |---------|-------|
-| F1-score | 0.6014 |
+| F1-score | 0.6020 |
 | ROC-AUC | 0.7561 |
 | PR-AUC | 0.6155 |
-| Precision (clase 1) | 0.4872 |
+| Precision (clase 1) | 0.4881 |
 | Recall (clase 1) | 0.7853 |
-| Threshold aplicado | 0.441 |
+| Threshold aplicado | 0.441444 |
 | n test | 1.000 |
 
 **Reporte por clase:**
 
 | Clase | Precision | Recall | F1 | Support |
 |-------|-----------|--------|-----|---------|
-| No churn (0) | 0.84 | 0.57 | 0.68 | 660 |
+| No churn (0) | 0.84 | 0.58 | 0.68 | 660 |
 | Churn (1) | 0.49 | 0.79 | 0.60 | 340 |
-| Weighted avg | 0.72 | 0.65 | 0.65 | 1.000 |
+| Weighted avg | 0.72 | 0.65 | 0.66 | 1.000 |
 
 **Confusion matrix (test set):**
 
 |                    | Predicho: No churn | Predicho: Churn |
 |--------------------|--------------------|-----------------|
-| Real: No churn     | 379 (TN)           | 281 (FP)        |
+| Real: No churn     | 380 (TN)           | 280 (FP)        |
 | Real: Churn        | 73 (FN)            | 267 (TP)        |
 
 **Lectura de negocio:**
@@ -394,8 +394,10 @@ andeslink-churn/
 │   ├── processed/.gitkeep
 │   └── current/.gitkeep
 ├── notebooks/
-│   ├── 01_eda.ipynb                  ← EDA completo (9 celdas + conclusiones)
-│   └── 02_automl_validation.ipynb    ← Apéndice PyCaret + SHAP
+│   ├── 01_EDA_churn_dataset.ipynb                ← EDA completo
+│   ├── 02_Validacion_pycaret.ipynb               ← Validacion usando Pycaret
+│   └── 03_Script_prediccion_churn.ipynb          ← Script de evalaucio nde modelo serialziado
+
 ├── src/
 │   ├── __init__.py
 │   ├── features.py                   ← add_derived_features, build_preprocessor
@@ -458,10 +460,10 @@ andeslink-churn/
   eventos de vida son predictores fuertes ausentes en este dataset
 - **Se hizo un unico split de validación:** la varianza del F1 con n=800 puede ser
   suficiente para cambiar el ranking con otra semilla; cross-validation de
-  k-folds daría una estimación más robusta
+  k-folds daria una estimación más robusta
 - **`charges_per_month` colapsa sobre `monthly_charge`:** por comportamiento
   algebraico del dataset, la feature derivada no aporta información independiente
-  significativa (confirmado por SHAP)
+  significativa
 - **Threshold fijo en producción:** el threshold 0.441 fue calibrado sobre este
   dataset; en producción debería recalibrarse periódicamente a futuro
 
@@ -588,4 +590,4 @@ Ambos enfoques coinciden en:
 
 ---
 
-*Informe generado al 03/05/2026. Cierre de E1: pendiente D15 (ruff final, merge dev→main, tag v1.0-parcial1).*
+*úlima modificacion 09/05/2026.*
