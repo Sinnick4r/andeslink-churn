@@ -410,7 +410,7 @@ andeslink-churn/
 │   ├── schemas.py                    ← placeholder E2
 │   └── model_loader.py               ← placeholder E2
 ├── gui/
-│   └── streamlit_app.py              ← placeholder E2
+│   └── git              ← placeholder E2
 ├── models/
 │   └── churn_model_v1.joblib         ← modelo serializado (DVC tracked)
 ├── reports/
