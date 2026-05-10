@@ -1,4 +1,4 @@
-'''
+"""
 
 pipeline de preprocesamiento y feature engineering para el modelo de churn
 
@@ -9,7 +9,7 @@ observaciones:
 *tickets_per_year con clip(lower=6) para evitar inflación en clientes de baja antigüedad
 *SimpleImputer incluido aunque el dataset no tenga nulos: robustez ante drift de calidad
 
-'''
+"""
 
 from typing import Final
 
@@ -23,7 +23,7 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 RANDOM_SEED: Final[int] = 42
 TARGET: Final[str] = "churn"
 
-#minimo de meses para anualizar tickets sin inflar artificialmente la tasa
+# minimo de meses para anualizar tickets sin inflar artificialmente la tasa
 # ---> Clientes con menos de 6 meses se tratan como si tuvieran 6<---
 TENURE_MIN_FOR_ANNUALIZATION: Final[int] = 6
 
@@ -54,11 +54,11 @@ CATEGORICAL_FEATURES: Final[list[str]] = [
 FEATURES_TO_DROP: Final[list[str]] = ["total_charges"]
 
 
-# feature engineering 
+# feature engineering
 
 
 def add_derived_features(df: pd.DataFrame) -> pd.DataFrame:
-    '''
+    """
     agrega features derivadas al DataFrame y retorna una copia.
 
     features creadas:
@@ -70,8 +70,13 @@ def add_derived_features(df: pd.DataFrame) -> pd.DataFrame:
       clientes de baja antigüedad (clip lower=6 meses) para evitar inflacion
       artificial en clientes recientes.
 
-    '''
-    required_cols = {"total_charges", "tenure_months", "monthly_charge", "support_tickets"}
+    """
+    required_cols = {
+        "total_charges",
+        "tenure_months",
+        "monthly_charge",
+        "support_tickets",
+    }
     missing = required_cols - set(df.columns)
     if missing:
         raise ValueError(f"Columnas faltantes para feature engineering: {missing}")
@@ -92,16 +97,18 @@ def add_derived_features(df: pd.DataFrame) -> pd.DataFrame:
     tenure_clipped = df["tenure_months"].clip(lower=TENURE_MIN_FOR_ANNUALIZATION)
     df["tickets_per_year"] = df["support_tickets"] / (tenure_clipped / 12)
 
-    #postcondiciones
+    # postcondiciones
     assert not df["charges_per_month"].isnull().any(), "NaN en charges_per_month"
     assert not df["tickets_per_year"].isnull().any(), "NaN en tickets_per_year"
-    assert (df["charges_per_month"] >= 0).all(), "charges_per_month con valores negativos"
+    assert (
+        df["charges_per_month"] >= 0
+    ).all(), "charges_per_month con valores negativos"
     assert (df["tickets_per_year"] >= 0).all(), "tickets_per_year con valores negativos"
 
     return df
 
 
-#preprocessor
+# preprocessor
 
 
 def build_preprocessor() -> ColumnTransformer:
@@ -134,8 +141,8 @@ def build_preprocessor() -> ColumnTransformer:
             (
                 "encoder",
                 OneHotEncoder(
-                    drop="first",        # evita multicolinealidad perfecta en OHE
-                    sparse_output=False, # array denso para compatibilidad con sklearn
+                    drop="first",  # evita multicolinealidad perfecta en OHE
+                    sparse_output=False,  # array denso para compatibilidad con sklearn
                     handle_unknown="error",  # falla ruidosamente ante categoría nueva
                 ),
             ),
@@ -173,23 +180,25 @@ def get_feature_names(preprocessor: ColumnTransformer) -> list[str]:
         RuntimeError: si el preprocessor no fue fiteado previamente.
     """
     try:
-        cat_encoder: OneHotEncoder = (
-            preprocessor.named_transformers_["cat"].named_steps["encoder"]
-        )
+        cat_encoder: OneHotEncoder = preprocessor.named_transformers_[
+            "cat"
+        ].named_steps["encoder"]
     except AttributeError as exc:
         raise RuntimeError(
             "El preprocessor no fue fiteado. Llamá a preprocessor.fit() primero."
         ) from exc
 
-    cat_names: list[str] = cat_encoder.get_feature_names_out(CATEGORICAL_FEATURES).tolist()
+    cat_names: list[str] = cat_encoder.get_feature_names_out(
+        CATEGORICAL_FEATURES
+    ).tolist()
     return NUMERIC_FEATURES + cat_names
 
 
-#smoke test 
+# smoke test
 
 
 def _smoke_test() -> None:
-    #verifica que el pipeline de features funciona end-to-end con data minima
+    # verifica que el pipeline de features funciona end-to-end con data minima
     sample = pd.DataFrame(
         {
             "tenure_months": [24, 0, 3],
@@ -222,8 +231,10 @@ def _smoke_test() -> None:
     # tenure=3 (< 6) → clip a 6 para anualizar
     # tickets_per_year = 5 / (6/12) = 10.0
     from math import isclose
-    assert isclose(df_feat.loc[2, "tickets_per_year"], 10.0, rel_tol=1e-6), \
-    f"tickets_per_year esperado 10.0, got {df_feat.loc[2, 'tickets_per_year']}"
+
+    assert isclose(
+        df_feat.loc[2, "tickets_per_year"], 10.0, rel_tol=1e-6
+    ), f"tickets_per_year esperado 10.0, got {df_feat.loc[2, 'tickets_per_year']}"
 
     # test preprocessor
     X = df_feat.drop(columns=["churn"])

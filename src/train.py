@@ -1,11 +1,11 @@
-#train.py
-#Entrenamiento de modelos con tracking en MLflow.
-'''
+# train.py
+# Entrenamiento de modelos con tracking en MLflow.
+"""
 Modelos comparados:
 - LogisticRegression: baseline lineal con class_weight='balanced'
 - RandomForestClassifier: ensemble de árboles
 - HistGradientBoostingClassifier: gradient boosting nativo de sklearn
-'''
+"""
 
 import hashlib
 import json
@@ -24,13 +24,13 @@ from sklearn.metrics import (
     classification_report,
     confusion_matrix,
     f1_score,
+    precision_recall_curve,
     roc_auc_score,
 )
-from sklearn.metrics import precision_recall_curve
 from sklearn.pipeline import Pipeline
 
 from src.data import load_raw_data, report_splits, split_data
-from src.features import build_preprocessor, get_feature_names
+from src.features import build_preprocessor
 
 RANDOM_SEED: Final[int] = 42
 MODEL_DIR: Final[Path] = Path("models")
@@ -39,7 +39,7 @@ EXPERIMENT_NAME: Final[str] = "andeslink-churn-e1"
 MODEL_FILENAME: Final[str] = "churn_model_v1.joblib"
 F1_TOLERANCE = 0.005
 
-#Ante diferencias despreciables, elijo siempre el modelo mas simple
+# Ante diferencias despreciables, elijo siempre el modelo mas simple
 MODEL_PRIORITY = {
     "LogisticRegression": 0,
     "RandomForest": 1,
@@ -47,10 +47,10 @@ MODEL_PRIORITY = {
 }
 # Utils
 
+
 def compute_model_hash(model_path: Path) -> str:
-    
     # SHA-256 del artefacto serializado -> String hexadecimal del hash SHA-256.
-   
+
     sha256 = hashlib.sha256()
     with open(model_path, "rb") as f:
         for chunk in iter(lambda: f.read(8192), b""):
@@ -68,20 +68,20 @@ def find_optimal_threshold(
     # precision_recall_curve retorna len(thresholds) = len(precisions) - 1
     # El ult. punto (recall=0, precision=1) no tiene threshold asociado
     f1_scores = (
-        2 * (precisions[:-1] * recalls[:-1])
-        / (precisions[:-1] + recalls[:-1] + 1e-8)
+        2 * (precisions[:-1] * recalls[:-1]) / (precisions[:-1] + recalls[:-1] + 1e-8)
     )
     best_idx = int(np.argmax(f1_scores))
     return round(float(thresholds[best_idx]), 6)
 
 
-#Config de modelos
+# Config de modelos
+
 
 def get_model_configs() -> dict[str, dict[str, Any]]:
-  #Define los 3 modelos a comparar c
-    #Todos usan sklearn puro 
+    # Define los 3 modelos a comparar c
+    # Todos usan sklearn puro
     # Return ->> Dict con nombre → {model, params} para logging en MLflow.
- 
+
     return {
         "LogisticRegression": {
             "model": LogisticRegression(
@@ -147,17 +147,19 @@ def train_and_evaluate(
     y_val: pd.Series,
 ) -> dict[str, Any]:
     # Entrena un pipeline completo, evalua en validación, devuelve Dict con pipeline, threshold, metricas y reporte.
- 
+
     # Precondiciones
     assert X_train.shape[0] == y_train.shape[0], "X_train e y_train tienen distinto n"
     assert X_val.shape[0] == y_val.shape[0], "X_val e y_val tienen distinto n"
     assert not X_train.isnull().all().any(), "Columna completamente nula en X_train"
 
     # pipeline: preprocessor + clasificador
-    full_pipeline = Pipeline([
-        ("preprocessor", build_preprocessor()),
-        ("classifier", model),
-    ])
+    full_pipeline = Pipeline(
+        [
+            ("preprocessor", build_preprocessor()),
+            ("classifier", model),
+        ]
+    )
 
     full_pipeline.fit(X_train, y_train)
 
@@ -196,19 +198,18 @@ def train_and_evaluate(
     }
 
 
-# Training principal 
+# Training principal
 
 
 def run_experiment() -> None:
-    
-    '''
+    """
     Ejecuta el pipeleine completo: 3 modelos, MLflow tracking, serialización.
 
     Side effects:
     - Escribe runs en mlruns/ (MLflow local)
     - Escribe models/churn_model_v1.joblib
     - Escribe reports/train_metrics.json
-    '''
+    """
     # Setup
     MODEL_DIR.mkdir(exist_ok=True)
     REPORTS_DIR.mkdir(exist_ok=True)
@@ -272,28 +273,28 @@ def run_experiment() -> None:
             trained_pipelines[model_name] = results["pipeline"]
 
             # Actualizar mejor modelo
-            '''
+            """
             if results["f1"] > best_f1:
                 best_f1 = results["f1"]
                 best_model_name = model_name
                 best_pipeline = results["pipeline"]
                 best_threshold = results["threshold"]
-            '''
+            """
     best_f1_absolute = max(result["f1_val"] for result in all_results.values())
 
     candidate_names = [
-    name
-    for name, result in all_results.items()
-    if result["f1_val"] >= best_f1_absolute - F1_TOLERANCE
-]
+        name
+        for name, result in all_results.items()
+        if result["f1_val"] >= best_f1_absolute - F1_TOLERANCE
+    ]
 
     best_model_name = sorted(
-    candidate_names,
-    key=lambda name: (
-        MODEL_PRIORITY[name],
-        -all_results[name]["roc_auc_val"],
-    ),
-)[0]
+        candidate_names,
+        key=lambda name: (
+            MODEL_PRIORITY[name],
+            -all_results[name]["roc_auc_val"],
+        ),
+    )[0]
 
     best_pipeline = trained_pipelines[best_model_name]
     best_f1 = all_results[best_model_name]["f1_val"]
@@ -340,7 +341,7 @@ def run_experiment() -> None:
             json.dump(metrics_payload, f, indent=2)
         mlflow.log_artifact(str(metrics_path))
 
-    # smoke test del artefacto serializado 
+    # smoke test del artefacto serializado
     loaded_pipeline: Pipeline = joblib.load(model_path)
     smoke_input = X_val.iloc[:5]
     smoke_pred = loaded_pipeline.predict(smoke_input)
@@ -355,6 +356,6 @@ def run_experiment() -> None:
     print(f"   Probabilidades: {[round(p, 4) for p in smoke_proba.tolist()]}")
 
 
-# Entry point 
+# Entry point
 if __name__ == "__main__":
     run_experiment()
