@@ -213,7 +213,7 @@ jupyter lab notebooks/01_EDA_churn_dataset.ipynb
 
 Para ejecutar todo: `Kernel → Restart & Run All`.
 
-### `notebooks/Validacion_pycaret.ipynb` - Calidacion extra de elección del mnodelo con PyCaret
+### `notebooks/02_Validacion_pycaret.ipynb` - Calidacion extra del modelo con PyCaret
 
 Validación independiente del modelo elegido usando PyCaret (`compare_models`). 
 **No es parte delpipeline DVC** - corre por separadoy se creo solo para validar el modelo elegido.
@@ -224,7 +224,7 @@ Validación independiente del modelo elegido usando PyCaret (`compare_models`).
  ```powershell
  pip install pycaret==3.3.2
  ```
-## Validacion del modelo serializado
+### `notebooks/03_Script_prediccion_churn.ipynb` - Validacion del modelo serializado
 
 Para verificar que el modelo carga y predice correctamente desde un script
 independiente (sin reentrenar):
@@ -248,7 +248,7 @@ andeslink-churn/
 │   └── current/.gitkeep
 ├── notebooks/
 │   ├── 01_EDA_churn_dataset.ipynb       ← EDA completo
-│   ├── 02_Validacion_Pycaret.ipynb      ← Evaluacion extra con PyCaret
+│   ├── 02_Validacion_pycaret.ipynb      ← Evaluacion extra con PyCaret
 │   └── 03_Script_prediccion_churn.ipynb ← Notebook de prueba del modelo
 ├── src/
 │   ├── features.py                   ← add_derived_features, build_preprocessor
@@ -263,7 +263,8 @@ andeslink-churn/
 │   ├── eda_01...07.png               ← 7 graficos del EDA + evaluación
 │   ├── train_metrics.json            ← comparativa de los 3 modelos
 │   ├── test_metrics.json             ← métricas finales en test
-│   └── informe_e1.md                 ← informe tecnico completo
+│   ├── informe_e1.md                 ← informe tecnico completo
+│   └── conclusiones_eda.md           ← informe del EDA inicial del dataset
 ├── dvc.yaml                          ← pipeline (3 stages)
 ├── dvc.lock                          ← firma de reproducibilidad
 ├── params.yaml                       ← parametros trackeados
