@@ -42,8 +42,8 @@ F1_TOLERANCE = 0.005
 # Ante diferencias despreciables, elijo siempre el modelo mas simple
 MODEL_PRIORITY = {
     "LogisticRegression": 0,
-    "RandomForest": 1,
-    "HistGradientBoosting": 2,
+    "HistGradientBoosting": 1,
+    "RandomForest": 2,
 }
 # Utils
 
