@@ -216,6 +216,52 @@ Pipeline categórico: `SimpleImputer(strategy='most_frequent')` →
 
 ### 4.1 Modelos comparados
 
+Se eligieron tres modelos de scikit-learn que cubren un espectro
+representativo de paradigmas para clasificación binaria tabular:
+
+- **LogisticRegression**: baseline lineal interpretable. Permite cuantificar
+  qué tan lejos llegan las relaciones lineales puras antes de necesitar
+  algo más complejo.
+- **RandomForest**: ensemble de árboles por bagging. Captura interacciones
+  no-lineales entre features, robusto a outliers, parámetros por defecto
+  razonables.
+- **HistGradientBoosting**: gradient boosting sobre histogramas. Suele dar
+  el mejor F1 en tabular de tamaño medio, maneja NaN nativamente, más
+  liviano que XGBoost/LightGBM.
+
+**Criterios para limitar el set a estos tres:**
+
+1. **Sklearn puro**: evita dependencias externas (XGBoost, LightGBM, CatBoost
+   requieren binarios extra, complican el `requirements.txt` de Docker en E2,
+   y suman superficie de falla en supply chain).
+
+2. **Paradigmas distintos**: lineal, bagging, boosting. Si los tres
+   convergen a F1 similar (como paso), la conclusión es estructural —
+   el techo lo pone el dataset, no el modelo. Si uno destacara, indicaría
+   en qué tipo de relaciones está la señal.
+
+3. **Costo del testing**: tres modelos entrenan en <1 minuto sobre 5000
+   filas, permiten iteración rápida del pipeline. Sumar más modelos sin
+   HPO no agregaria info proporcional
+
+**Modelos no incluidos y por que:**
+
+- **XGBoost / LightGBM / CatBoost**: redundantes con HistGBM para este
+  dataset y sumarían dependencias sin beneficio concreto
+- **SVM**: poco escalable; con kernels no-lineales el costo crece
+  cuadráticamente con el dataset. Esto es un problema operacional para un futuro que haz que tener en cuenta pro mas que este sea un proyecto con un dataset fijo.
+- **Redes neuronales (MLP)**: requieren muchisimo mas tuning, para este dataset no vale la pena
+- **k-NN, Naive Bayes**: descartados como baseline porque LogReg ya cubre
+  ese rol con mejor capacidad explicativa (coeficientes interpretables).
+
+**Validación cruzada de la elección:** Adicionalmente se ejecutó PyCaret
+`compare_models` (ver `notebooks/02_Validacion_pycaret.ipynb`) sobre el
+mismo dataset. Los resultados confirman que ningún modelo de los disponibles
+en sklearn supera significativamente el F1 alcanzado por los tres
+comparados manualmente.
+
+### Resumen
+
 Todos de scikit-learn puro para tener menos dependencias y, por ende, menor
 riesgo de conflictos de versión en el Dockerfile de la segunda entrega del proyecto.
 
@@ -234,28 +280,56 @@ Como hay desbalance moderado y costo asimétrico (FN > FP), el threshold óptimo
 
 ### 4.3 Resultados en validacion
 
-| Modelo | F1 | ROC-AUC | PR-AUC | Threshold |
-|--------|-----|---------|--------|-----------|
-| **LogisticRegression** | **0.6216** | **0.7544** | 0.5956 | 0.441 |
-| RandomForest | 0.6209 | 0.7503 | 0.6021 | 0.410 |
-| HistGradientBoosting | 0.6059 | 0.7461 | **0.6061** | 0.305 |
+| Modelo | F1 (val) | ROC-AUC (val) | Threshold | Tamaño .joblib |
+|---|---|---|---|---|
+| LogisticRegression | 0.6196 | 0.7544 | 0.441444 | ~7 KB |
+| RandomForest | 0.6209 | 0.7503 | 0.409929 | ~7 MB |
+| HistGradientBoosting | 0.6037 | 0.7461 | 0.304959 | ~2 MB |
 
 ### 4.4 Selección del modelo final
 
-Se eligio LogisticRegression como modelo final por tres razones:
+Se compararon tres modelos bajo idénticas condiciones (mismo split, mismo seed,
+threshold óptimo por F1 individualizado):
 
-1. La diferencia máxima de 0.016 en F1 entre los tres
-   modelos no es estadísticamente significativa con n=800 en validación.
-2. El modelo más simple con igual capacidad predictiva
-   es preferible por menor costo computacional y mayor interpretabilidad.
-3. Los coeficientes de LogReg permiten explicar al negocio qué variables impulsan el churn sin post-procesamiento adicional.
+| Modelo | F1 (val) | ROC-AUC (val) | Threshold | Tamaño .joblib |
+|---|---|---|---|---|
+| LogisticRegression | 0.6196 | 0.7544 | 0.441444 | ~7 KB |
+| RandomForest | 0.6209 | 0.7503 | 0.409929 | ~7 MB |
+| HistGradientBoosting | 0.6037 | 0.7461 | 0.304959 | ~2 MB |
+
+RandomForest obtuvo el F1 absoluto más alto pero con margen marginal: 0.0013
+puntos sobre LogReg. Esta diferencia equivale a aproximadamente 1 predicción
+distinta sobre 800 muestras de validación, dentro del ruido estadistico
+esperable para evaluaciones de esta escala.
+
+**Regla de selección adoptada:** ante empate técnico (Δ F1 < 0.005), se prioriza
+el modelo más simple según orden definido en `MODEL_PRIORITY`
+(LogReg → HistGBM → RF). Como tiebreaker secundario se usa ROC-AUC.
+
+**Criterio operacional de "simplicidad":**
+- Tamaño del artefacto serializado: relevante para cold start de la API
+  (LogReg ~7 KB vs RF ~7 MB, factor 1000×).
+- Tiempo de inferencia: LogReg evalúa una combinación lineal (~µs);
+  RF promedia 200 árboles de profundidad 12 (~ms).
+- Interpretabilidad: LogReg expone coeficientes directos; ensembles
+  requieren feature importance o SHAP.
+
+**Justificacion de escalabilidad:** La regla no impacta resultados a esta
+escala (5.000 filas), pero anticipa el escenario de crecimiento del dataset.
+Si crece el volumen del dataset, la diferencia operacional entre LogReg y RF se vuelve
+crítica (tiempo de entrenamiento, memoria de inferencia, tamaño del
+artefacto en el repositorio de modelos).
+
+**Resultado final:** LogReg seleccionado. Es el segundo en F1 absoluto pero
+el primero en `MODEL_PRIORITY`, y la diferencia 0.0013 entra dentro de la
+tolerancia.
 
 ### 4.5 Revision de la hipótesis del EDA
 
 El EDA planteó que las correlaciones lineales débiles indicaban señal de interacción
 no-lineal. Los resultados muestran que los modelos de árbol no lograron capitalizar
 interacciones adicionales. Esta discrepancia entre hipótesis y resultado es
-un hallazgo válido del análisis, no un error de modelado.
+un hallazgo valido del análisis, no un error de modelado.
 
 ### 4.6 Evaluacion final en test set
 
@@ -294,14 +368,20 @@ un hallazgo válido del análisis, no un error de modelado.
 
 ### 4.7 Consistencia val vs test
 
-| Métrica | Validación | Test | Diferencia |
-|---------|------------|------|------------|
-| F1 | 0.6216 | 0.6014 | −0.020 |
-| ROC-AUC | 0.7544 | 0.7561 | +0.002 |
-| PR-AUC | 0.5956 | 0.6155 | +0.020 |
+| Metrica | Validacion | Test | Δ |
+|---|---|---|---|
+| F1 | 0.6196 | 0.6020 | -0.0176 |
+| ROC-AUC | 0.7544 | 0.7561 | +0.0017 |
+| PR-AUC | 0.5956 | 0.6155 | +0.0199 |
 
-Diferencia de 2 puntos en F1 entre val y test es normal, por lo que se peude decir que no hay overfitting ni
-data leakage.
+La caida de F1 entre val y test (-0.018) es coherente con el ruido esperable
+para tamaños de muestra de 800 y 1.000 respectivamente. Notablemente,
+ROC-AUC y PR-AUC suben levemente en test, lo que descarta overfitting:
+si el modelo hubiera memorizado patrones del train+val, las
+metricas globales de discriminación (ROC, PR) tambien deberian bajar.
+
+Conclusion: el modelo generaliza correctamente. el F1 es más bajo en el test, lo que refleja
+una distribución levemente distinta de probabilidades cerca del threshold
 
 ---
 
@@ -350,9 +430,9 @@ train:
 - Tracking URI local: `file:./mlruns`
 - Experimento: `andeslink-churn-e1`
 - **4 runs registrados:**
-  - `LogisticRegression`: F1=0.6216, ROC-AUC=0.7544, threshold=0.441
-  - `RandomForest`: F1=0.6209, ROC-AUC=0.7503, threshold=0.410
-  - `HistGradientBoosting`: F1=0.6059, ROC-AUC=0.7461, threshold=0.305
+  - `LogisticRegression`: F1=0.6216, ROC-AUC=0.7544, threshold=0.44144
+  - `RandomForest`: F1=0.6209, ROC-AUC=0.7503, threshold=0.409929
+  - `HistGradientBoosting`: F1=0.6059, ROC-AUC=0.7461, threshold=0.304959
   - `GANADOR_LogisticRegression`: modelo serializado logueado con MLflow sklearn
 - **Hash SHA-256** del `.joblib` registrado como tag en el run ganador
 - **Artefacto JSON** con comparativa de los 3 modelos (`reports/train_metrics.json`)
@@ -457,15 +537,21 @@ andeslink-churn/
 ### 7.2  posibles limitaciones
 
 - **No hay variables temporales:** fecha de alta, historial de cambios de plan y
-  eventos de vida son predictores fuertes ausentes en este dataset
+  eventos de vida son predictores fuertes ausentes en este dataset. Sin esto, el las correlaciones que quedan en el dataset son realtivamente debiles  (sininguna se correalciona con mas de 0.17 con churn). Por eso el F1 es limitado
 - **Se hizo un unico split de validación:** la varianza del F1 con n=800 puede ser
   suficiente para cambiar el ranking con otra semilla; cross-validation de
   k-folds daria una estimación más robusta
 - **`charges_per_month` colapsa sobre `monthly_charge`:** por comportamiento
   algebraico del dataset, la feature derivada no aporta información independiente
   significativa
-- **Threshold fijo en producción:** el threshold 0.441 fue calibrado sobre este
-  dataset; en producción debería recalibrarse periódicamente a futuro
+- **Threshold fijo en produccin:** el threshold 0.44144 fue calibrado sobre este
+  dataset; en producción debería recalibrarse periódicamente a 
+  - **Comparación limitada a 3 modelos**: no se exploraron variantes con
+  optimizacion de hiperparametros. Se podria usar GridSearchCV u Optuna, por ekemplo, 
+  y a mejorar el F1 de cada modelo individualmente. Eso se podria evaluar en la segunda entrega E2.
+- **Sin estimacion de incertidumbre**: el modelo devuelve una probabilidad
+  puntual, no un intervalo de confianza. Para decisiones de negocio
+  criticas, deberia implementarse metodo para incluirla.
 
 ### 7.3 Próximos pasos de la entrega 2
 
@@ -501,7 +587,7 @@ Los modelos lineales dominan el ranking:
 | 4 | Gradient Boosting | 0.4866 | 0.7440 |
 | 5 | Random Forest | 0.4674 | 0.7252 |
 
-### A.4 Comparación con threshold equivalente (0.441)
+### A.4 Comparación con threshold equivalente (~0.441)
 
 Al igualar el threshold al calibrado en el pipeline manual:
 
