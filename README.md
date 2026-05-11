@@ -26,10 +26,18 @@ despliegue como API + GUI, y monitoreo técnico y de datos.
 | Métrica | Valor (test set, n=1.000) |
 |---------|---------------------------|
 | Modelo seleccionado | LogisticRegression |
-| F1-score | 0.6014 |
+| F1-score | 0.6020 |
 | ROC-AUC | 0.7561 |
+| PR-AUC | 0.6155 |
+| Precision (churn) | 0.4881 |
 | Recall (churn) | 0.7853 |
-| Threshold calibrado | 0.441 |
+| Threshold calibrado | 0.441444 |
+
+> **Nota sobre la selección de modelo:** LogReg ganó por regla de tolerancia
+> (F1_TOLERANCE=0.005). En F1 absoluto, RandomForest dio marginalmente mejor
+> (0.6209 vs 0.6196, diferencia 0.0013 dentro del ruido estadistico). El criterio
+> de desempate prioriza simplicidad operativa: menor tamaño del artefacto,
+> inferencia más rápida en producción, coeficientes interpretables. 
 
 El detalle completo de decisiones, EDA, comparación de modelos, etc. esta en ->
 [`reports/informe_e1.md`](reports/informe_e1.md).
