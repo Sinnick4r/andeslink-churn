@@ -148,13 +148,16 @@ Salida esperada (los valores deben coincidir exactamente - `random_state=42`):
 
 ```json
 {
-  "f1_score": 0.6014,
+  "model": "models\\churn_model_v1.joblib",
+  "model_name": "LogisticRegression",
+  "threshold": 0.441444,
+  "test_size": 1000,
+  "f1": 0.602,
   "roc_auc": 0.7561,
   "pr_auc": 0.6155,
-  "precision_class_1": 0.4872,
-  "recall_class_1": 0.7853,
-  "threshold": 0.441,
-  ...
+  "precision_class1": 0.4881,
+  "recall_class1": 0.7853,
+  "support_class1": 340
 }
 ```
 
@@ -184,18 +187,21 @@ mlflow ui --port 5000
 Abrir [http://localhost:5000](http://localhost:5000) en el navegador. El experimento
 `andeslink-churn-e1` contiene 4 runs:
 
-| Run | F1 | ROC-AUC | Threshold |
-|-----|-----|---------|-----------|
-| LogisticRegression | 0.6216 | 0.7544 | 0.441 |
-| RandomForest | 0.6209 | 0.7503 | 0.410 |
-| HistGradientBoosting | 0.6059 | 0.7461 | 0.305 |
-| GANADOR_LogisticRegression | (modelo serializado) | — | 0.441 |
+| Run | F1 (val) | ROC-AUC (val) | Threshold |
+|-----|----------|---------------|-----------|
+| LogisticRegression | 0.6196 | 0.7544 | 0.441444 |
+| RandomForest | 0.6209 | 0.7503 | 0.409929 |
+| HistGradientBoosting | 0.6037 | 0.7461 | 0.304959 |
+| GANADOR_LogisticRegression | 0.6196 | — | 0.441444 |
 
+> **Nota:** RF tiene F1 marginalmente mayor (0.0013) pero LogReg fue seleccionado
+> por regla de tolerancia. Ver `reports/train_metrics.json` campo `selection_rule`
+> para detalle.
 ---
 
 ## Notebooks
 
-### `notebooks/EDA_churn_dataset.ipynb` — Análisis exploratorio
+### `notebooks/01_EDA_churn_dataset.ipynb` — Análisis exploratorio
 
 Cubre 9 secciones: distribución del target, descriptivas, boxplots por clase,
 categóricas vs churn, matriz de correlación, multicolinealidad de `total_charges`,
@@ -303,8 +309,10 @@ Debe imprimir `All checks passed!` sin warnings.
 Las decisiones cerradas durante E1 están documentadas en detalle en
 [`reports/informe_e1.md`](reports/informe_e1.md). Resumen:
 
-- **Modelo:** LogisticRegression (le gana a RF y HistGBM con diferencia <0.02 F1)
-- **Threshold:** 0.441 calibrado por curva precision-recall (no se uso el default de 0.5)
+- **Modelo:** LogisticRegression (seleccionado por regla de tolerancia F1; RF empata
+  técnicamente con diferencia 0.0013 en F1, dentro del ruido estadístico)
+- **Threshold:** 0.441444 calibrado por curva precision-recall (no se usó el default
+  de 0.5; el threshold por debajo de 0.5 favorece recall)
 - **Features descartadas:** `total_charges` (redundancia estructural con
   `tenure_months × monthly_charge`)
 - **Features derivadas:** `charges_per_month`, `tickets_per_year`
