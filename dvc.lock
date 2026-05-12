@@ -37,8 +37,8 @@ stages:
       size: 8539
     - path: src/train.py
       hash: md5
-      md5: bc94c5cb8f9d37f87a5e7573624b5c15
-      size: 12096
+      md5: f5e97a7882a38754ad5033aec9e4f49a
+      size: 12105
     params:
       params.yaml:
         split.random_seed: 42
@@ -47,7 +47,7 @@ stages:
     outs:
     - path: models/churn_model_v1.joblib
       hash: md5
-      md5: cc3614fd90b2e5a8d57861de9bfc59a2
+      md5: 20889bb193103d705f8306ba84406f4c
       size: 7175
     - path: reports/train_metrics.json
       hash: md5
@@ -58,7 +58,7 @@ stages:
     deps:
     - path: models/churn_model_v1.joblib
       hash: md5
-      md5: cc3614fd90b2e5a8d57861de9bfc59a2
+      md5: 20889bb193103d705f8306ba84406f4c
       size: 7175
     - path: src/data.py
       hash: md5
@@ -71,8 +71,8 @@ stages:
     outs:
     - path: reports/eda_07_evaluation_test.png
       hash: md5
-      md5: 860c0e0daef25074574352617c73aa9f
-      size: 138793
+      md5: 26626d3743867db3260b187c90811dbf
+      size: 138803
     - path: reports/test_metrics.json
       hash: md5
       md5: 6ee9789acdf1e1aa507ba6595fe440ad
