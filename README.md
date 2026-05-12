@@ -74,7 +74,7 @@ Se puso por separado para facilitar la lectura.
 ### Paso 1 - Clonar el repo
 
 ```powershell
-git clone <URL_DEL_REPO> andeslink-churn
+git clone https://github.com/Sinnick4r/andeslink-churn andeslink-churn
 cd andeslink-churn
 ```
 
