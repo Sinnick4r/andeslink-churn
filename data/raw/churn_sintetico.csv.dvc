@@ -1,0 +1,5 @@
+outs:
+- md5: b8541379ed614873c48ec17bded142ac
+  size: 342760
+  hash: md5
+  path: churn_sintetico.csv
