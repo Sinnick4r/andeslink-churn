@@ -1,4 +1,4 @@
-Trabako Practico:  Predicción de Churn
+### Trabajo Practico:  Predicción de Churn
 Proyecto de **MLOps end-to-end** para el Laboratorio de Minería de Dato. 
 Resuelve un caso de clasificación binaria de
 abandono de clientes (churn) para la empresa **AndesLink Servicios
