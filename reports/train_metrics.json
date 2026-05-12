@@ -1,0 +1,31 @@
+{
+  "selected_model": "LogisticRegression",
+  "selection_rule": "Seleccion por F1 con tolerancia 0.005. En empate operativo, desempate por simplicidad/interpretabildad y luego ROC-AUC.",
+  "f1_tolerance": 0.005,
+  "best_f1_absolute": 0.6208869814020028,
+  "candidate_models": [
+    "LogisticRegression",
+    "RandomForest"
+  ],
+  "selected_threshold": 0.441444,
+  "models": {
+    "LogisticRegression": {
+      "f1_val": 0.6195965417867435,
+      "roc_auc_val": 0.754400623885918,
+      "pr_auc_val": 0.5956462749043496,
+      "threshold": 0.441444
+    },
+    "RandomForest": {
+      "f1_val": 0.6208869814020028,
+      "roc_auc_val": 0.750299409536542,
+      "pr_auc_val": 0.6021440594419456,
+      "threshold": 0.409929
+    },
+    "HistGradientBoosting": {
+      "f1_val": 0.6037151702786377,
+      "roc_auc_val": 0.7460519719251338,
+      "pr_auc_val": 0.6060704429364818,
+      "threshold": 0.304959
+    }
+  }
+}
