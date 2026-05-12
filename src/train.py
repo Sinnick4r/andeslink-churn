@@ -333,7 +333,7 @@ def run_experiment() -> None:
         mlflow.log_param("optimal_threshold", best_threshold)
         mlflow.log_param("model_sha256_prefix", model_hash[:16])
         mlflow.log_metric("best_f1_val", best_f1)
-        mlflow.sklearn.log_model(best_pipeline, name="model")
+        mlflow.sklearn.log_model(best_pipeline, artifact_path="model")
 
         # Log comparativa de los 3 modelos como artifact JSON
         metrics_path = REPORTS_DIR / "train_metrics.json"
