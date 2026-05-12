@@ -1,5 +1,4 @@
-# AndesLink — Predicción de Churn
-
+Trabako Practico:  Predicción de Churn
 Proyecto de **MLOps end-to-end** para el Laboratorio de Minería de Dato. 
 Resuelve un caso de clasificación binaria de
 abandono de clientes (churn) para la empresa **AndesLink Servicios
@@ -16,7 +15,7 @@ despliegue como API + GUI, y monitoreo técnico y de datos.
 - **Materia:** Laboratorio de Minería de Datos
 - **Institución:** ISTEA
 - **Profesor:** Diego Mosquera
-- **Fecha de entrega E1:** 12/05/2026
+- **Alumno: Emilio Gomez Lencina
 - **Modalidad:** trabajo individual
 
 ---
