@@ -15,7 +15,7 @@ despliegue como API + GUI, y monitoreo técnico y de datos.
 - **Materia:** Laboratorio de Minería de Datos
 - **Institución:** ISTEA
 - **Profesor:** Diego Mosquera
-- **Alumno: Emilio Gomez Lencina
+- **Alumno**: Emilio Gomez Lencina
 - **Modalidad:** trabajo individual
 
 ---
@@ -96,7 +96,7 @@ python -c "import mlflow; print('mlflow:', mlflow.__version__)"     # 2.17.x
 ### Paso 3 - Colocar el CSV en `data/raw/`
 
 > **Observacion:** El proyecto usa DVC con storage local
-> (sin remote configurado), por lo que el CSV se entrega por separado.
+> **(sin remote configurado)**, por lo que el CSV se entrega por separado.
 
 Copiar el archivo `churn_sintetico.csv`  a la carpeta `data/raw/` y verificar que el hash coincide con el trackeado por DVC:
 
@@ -191,7 +191,7 @@ Abrir [http://localhost:5000](http://localhost:5000) en el navegador. El experim
 | LogisticRegression | 0.6196 | 0.7544 | 0.441444 |
 | RandomForest | 0.6209 | 0.7503 | 0.409929 |
 | HistGradientBoosting | 0.6037 | 0.7461 | 0.304959 |
-| GANADOR_LogisticRegression | 0.6196 | — | 0.441444 |
+| GANADOR_LogisticRegression | 0.6196 | - | 0.441444 |
 
 > **Nota:** RF tiene F1 marginalmente mayor (0.0013) pero LogReg fue seleccionado
 > por regla de tolerancia. Ver `reports/train_metrics.json` campo `selection_rule`
@@ -200,7 +200,7 @@ Abrir [http://localhost:5000](http://localhost:5000) en el navegador. El experim
 
 ## Notebooks
 
-### `notebooks/01_EDA_churn_dataset.ipynb` — Análisis exploratorio
+### `notebooks/01_EDA_churn_dataset.ipynb` - Análisis exploratorio
 
 Cubre 9 secciones: distribución del target, descriptivas, boxplots por clase,
 categóricas vs churn, matriz de correlación, multicolinealidad de `total_charges`,
