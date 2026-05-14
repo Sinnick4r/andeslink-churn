@@ -45,7 +45,7 @@ clientes con mayor riesgo antes de que cancelen.
 
 - Tasa de retención esperada si se trabaja sobre el top-20% de probabilidad predicha
 - Reduccion estimada de churn vs. baseline de no intervencion
-- El modelo detecta 267 de 340 churners en test set (Recall 78.5%) — captura casi
+- El modelo detecta 267 de 340 churners en test set (Recall 78.5%) - captura casi
   8 de cada 10 clientes que se van antes de que cancelen
 
 ---
@@ -57,7 +57,7 @@ clientes con mayor riesgo antes de que cancelen.
 - **Archivo:** `churn_sintetico.csv`
 - **Origen:** dataset aportado
 - **Dimensiones:** 5.000 filas × 16 columnas
-- **Target:** `churn` — distribución: 34% positivos (1.702), 66% negativos (3.298)
+- **Target:** `churn` - distribución: 34% positivos (1.702), 66% negativos (3.298)
 - **Ratio de desbalance:** 1.94:1
 - **Nulos:** ninguno en ninguna columna
 
@@ -67,7 +67,7 @@ clientes con mayor riesgo antes de que cancelen.
 |----------|------|-------------|
 | tenure_months | Numérica | Meses de antigüedad como cliente (1–72) |
 | monthly_charge | Numérica | Cargo mensual actual ($15–$127) |
-| total_charges | Numérica | Cargos totales acumulados (multicolineal — ver 2.4) |
+| total_charges | Numérica | Cargos totales acumulados (multicolineal - ver 2.4) |
 | support_tickets | Numérica | Tickets de soporte abiertos (0–8) |
 | late_payments | Numérica | Cantidad de pagos atrasados (0–5) |
 | avg_monthly_usage_gb | Numérica | Uso de datos mensual promedio (5–324 GB) |
@@ -136,7 +136,7 @@ entre mensual y bianual). `region` no aporta señal discriminante marginal, aunq
 se incluye en el pipeline por posibles interacciones no lineales.
 
 **Hallazgo 5 ---> hay redundancia estructural bastante alta en `total_charges`:**
-`total_charges ≈ tenure_months × monthly_charge` — correlación 0.87, ratio mediana
+`total_charges ≈ tenure_months × monthly_charge` - correlación 0.87, ratio mediana
 = 1.000, más del 58% de filas con ratio entre 0.95 y 1.05. En modelos lineales esto
 introduce multicolinealidad; en modelos basados en árboles genera redundancia que
 puede diluir importancia de variables.
@@ -147,8 +147,7 @@ fuertemente con `monthly_charge` dado el comportamiento algebraico del dataset; 
 utilidad real se evaluó por importancia de features post-entrenamiento (ver apéndice).
 
 **Hallazgo 6 ---> `has_streaming` sin señal:**
-Boxplots y correlación (~−0.008) prácticamente idénticos entre clases. Confirmado
-posteriormente por SHAP (SHAP medio = 0.005, posición 20/20).
+Boxplots y correlación (~−0.008) prácticamente idénticos entre clases.
 
 **Hallazgo 7 ---> no se detecto leakage:**
 Ninguna variable es derivable directamente del target ni contiene información futura.
@@ -179,7 +178,7 @@ evaluación final.
 **`charges_per_month = total_charges / tenure_months`**
 - Fallback para `tenure_months = 0`: usa `monthly_charge` directamente
 - Nota: puede correlacionar fuertemente con `monthly_charge` dado el comportamiento
-  algebraico del dataset. Su aporte incremental fue evaluado via SHAP
+  algebraico del dataset.
 
 **`tickets_per_year = support_tickets / (tenure_months_clipped / 12)`**
 - `tenure_months` se clipea en mínimo 6 meses para evitar inflación artificial
@@ -236,7 +235,7 @@ representativo de paradigmas para clasificación binaria tabular:
    y suman superficie de falla en supply chain).
 
 2. **Paradigmas distintos**: lineal, bagging, boosting. Si los tres
-   convergen a F1 similar (como paso), la conclusión es estructural —
+   convergen a F1 similar (como paso), la conclusión es estructural -
    el techo lo pone el dataset, no el modelo. Si uno destacara, indicaría
    en qué tipo de relaciones está la señal.
 
@@ -546,7 +545,7 @@ andeslink-churn/
   significativa
 - **Threshold fijo en produccin:** el threshold 0.44144 fue calibrado sobre este
   dataset; en producción debería recalibrarse periódicamente a 
-  - **Comparación limitada a 3 modelos**: no se exploraron variantes con
+ - **Comparación limitada a 3 modelos**: no se exploraron variantes con
   optimizacion de hiperparametros. Se podria usar GridSearchCV u Optuna, por ekemplo, 
   y a mejorar el F1 de cada modelo individualmente. Eso se podria evaluar en la segunda entrega E2.
 - **Sin estimacion de incertidumbre**: el modelo devuelve una probabilidad
@@ -640,7 +639,7 @@ LogReg es naturalmente robusto en este aspecto.
 | F1-Score | 0.5624 | 0.6026 | **+7.15%** |
 
 El threshold calibrado captura un 20% más de casos de churn manteniendo un
-equilibrio saludable con la precision — justificación cuantitativa de la decisión
+equilibrio saludable con la precision - justificación cuantitativa de la decisión
 de calibración.
 
 ### A.8 Conclusion
@@ -669,7 +668,7 @@ Ambos enfoques coinciden en:
 - [x] Análisis SHAP sobre Random Forest (apéndice)
 - [x] `ruff check src/` sin errores
 - [x] Pre-setup E2: Dockerfile, docker-compose.yml, requirements.txt, app/ placeholders
-- [x] `dvc.lock` commiteado (D13 — CP3 cerrado)
+- [x] `dvc.lock` commiteado (D13 - CP3 cerrado)
 - [x] Informe técnico completo (D14)
 - [x] `README.md` con instrucciones de instalación, ejecución y validación (D14)
 - [x] Tag `v1.0-parcial1` en `main`
