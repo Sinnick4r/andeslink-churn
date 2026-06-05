@@ -1,0 +1,7 @@
+[core]
+    remote = b2_read
+['remote "b2_read"']
+    url = https://f002.backblazeb2.com/file/andeslink-churn-bucket
+['remote "b2_write"']
+    url = s3://andeslink-churn-bucket
+    endpointurl = https://s3.us-west-002.backblazeb2.com
