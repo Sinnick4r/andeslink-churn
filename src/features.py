@@ -238,9 +238,9 @@ def _smoke_test() -> None:
     # tickets_per_year = 5 / (6/12) = 10.0
     from math import isclose
 
-    assert isclose(
-        df_feat.loc[2, "tickets_per_year"], 10.0, rel_tol=1e-6
-    ), f"tickets_per_year esperado 10.0, got {df_feat.loc[2, 'tickets_per_year']}"
+    assert isclose(df_feat.loc[2, "tickets_per_year"], 10.0, rel_tol=1e-6), (
+        f"tickets_per_year esperado 10.0, got {df_feat.loc[2, 'tickets_per_year']}"
+    )
 
     # test preprocessor
     X = df_feat.drop(columns=["churn"])
@@ -283,9 +283,9 @@ def _smoke_test() -> None:
         1,
         len(feature_names),
     ), "Transform de categoría desconocida cambió el shape esperado"
-    assert not np.isnan(
-        X_unknown_transformed
-    ).any(), "Transform de categoría desconocida produjo NaN"
+    assert not np.isnan(X_unknown_transformed).any(), (
+        "Transform de categoría desconocida produjo NaN"
+    )
 
     print("    Smoke test de features.py: OK")
     print(f"   Features totales post-transformación: {X_transformed.shape[1]}")

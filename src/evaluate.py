@@ -75,7 +75,7 @@ def evaluate_on_test(
     # prueba el modelo final sobre el conjunto de test...
     if not model_path.exists():
         raise FileNotFoundError(
-            f"Modelo no encontrado en {model_path}. " "Corré src/train.py primero."
+            f"Modelo no encontrado en {model_path}. Corré src/train.py primero."
         )
 
     REPORTS_DIR.mkdir(exist_ok=True)

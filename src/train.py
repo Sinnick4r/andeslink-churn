@@ -145,7 +145,7 @@ def train_and_evaluate(
     y_val: pd.Series,
 ) -> dict[str, Any]:
     # Entrena un pipeline completo, evalua en validación,
-    # makdevuelve Dict con pipeline, threshold, metricas y reporte.
+    # devuelve Dict con pipeline, threshold, metricas y reporte.
 
     # Precondiciones
     assert X_train.shape[0] == y_train.shape[0], "X_train e y_train tienen distinto n"

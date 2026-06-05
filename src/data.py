@@ -117,8 +117,7 @@ def report_splits(
     for name, y_split in [("train", y_train), ("val", y_val), ("test", y_test)]:
         pct = len(y_split) / total * 100
         print(
-            f"  {name:<6}: {len(y_split):>4} filas ({pct:.0f}%) "
-            f"| churn rate: {y_split.mean():.3f}"
+            f"  {name:<6}: {len(y_split):>4} filas ({pct:.0f}%) | churn rate: {y_split.mean():.3f}"
         )
     print("=" * 50)
 
