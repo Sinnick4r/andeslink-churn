@@ -1,3 +1,7 @@
+[![CI](https://github.com/Sinnick4r/analisis-eventos-NOAA/actions/workflows/ci.yml/badge.svg)](https://github.com/Sinnick4r/analisis-eventos-NOAA/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/python-3.11%2B-blue)
+[![Ruff](https://img.shields.io/badge/lint-ruff-261230)](https://github.com/astral-sh/ruff)
+
 ### Trabajo Practico:  Predicción de Churn
 Proyecto de **MLOps end-to-end** para el Laboratorio de Minería de Dato. 
 Resuelve un caso de clasificación binaria de
