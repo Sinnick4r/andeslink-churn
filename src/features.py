@@ -8,7 +8,7 @@ observaciones:
 *charges_per_month reemplaza a total_charges (evaluar vs monthly_charge post-entrenamiento)
 *tickets_per_year con clip(lower=6) para evitar inflación en clientes de baja antigüedad
 *SimpleImputer incluido aunque el dataset no tenga nulos: robustez ante drift de calidad
-
+*OneHotEncoder con handle_unknown="ignore": Capa 2 de defensa para categorías no vistas
 """
 
 from typing import Final
@@ -122,6 +122,18 @@ def build_preprocessor() -> ColumnTransformer:
     El SimpleImputer se incluye aunque el dataset actual no tenga nulos:
     garantiza que el pipeline no falle ante datos con nulos en producción
     (drift de calidad de datos).
+    Sobre handle_unknown='ignore':
+        En producción, la Capa 1 (Pydantic Literal en el API) rechaza categorías
+        desconocidas con 422 antes de llegar al modelo. Pero el preprocessor también
+        se usa en paths que no pasan por Pydantic: jobs de reentrenamiento con datos
+        nuevos, scripts de drift simulation, integraciones futuras. Para esos casos,
+        handle_unknown='ignore' evita que el pipeline explote.
+ 
+        Comportamiento concreto con drop='first' + handle_unknown='ignore':
+        una categoría desconocida produce una fila all-zeros en las dummies de esa
+        columna. sklearn la trata como la categoría de referencia implícita (la que
+        fue dropeada). Es contraintuitivo pero defendible: en presencia de información
+        ausente, el modelo predice usando el baseline de esa variable.
 
     remainder='drop' descarta total_charges y cualquier otra columna no listada.
 
@@ -143,7 +155,7 @@ def build_preprocessor() -> ColumnTransformer:
                 OneHotEncoder(
                     drop="first",  # evita multicolinealidad perfecta en OHE
                     sparse_output=False,  # array denso para compatibilidad con sklearn
-                    handle_unknown="error",  # falla ruidosamente ante categoría nueva
+                    handle_unknown="ignore",  # Capa 2: no fallar ante categoría no vista
                 ),
             ),
         ]
@@ -246,8 +258,41 @@ def _smoke_test() -> None:
     assert X_transformed.shape[1] == len(feature_names)
     assert not np.isnan(X_transformed).any()
 
+    #test handle unknown="ignore": validación del fix post-feedback Mosquera.
+    # Antes (handle_unknown="error"), este transform tiraba ValueError.
+    # Ahora, una categoría no vista produce all-zeros en las dummies de esa columna.
+    unknown_sample = pd.DataFrame(
+        {
+            "tenure_months": [12],
+            "monthly_charge": [50.0],
+            "total_charges": [600.0],
+            "support_tickets": [1],
+            "late_payments": [0],
+            "avg_monthly_usage_gb": [80.0],
+            "has_streaming": [0],
+            "has_security_pack": [1],
+            "num_products": [2],
+            "customer_age": [40],
+            "is_promo": [0],
+            "contract_type": ["mensual"],
+            "payment_method": ["bitcoin"],  # ← categoría no vista en entrenamiento
+            "internet_service": ["satelital"],  # ← categoría no vista
+            "region": ["centro"],
+            "churn": [0],
+        }
+    )
+    unknown_feat = add_derived_features(unknown_sample)
+    X_unknown = unknown_feat.drop(columns=["churn"])
+    X_unknown_transformed = preprocessor.transform(X_unknown)  # NO debe explotar
+ 
+    assert X_unknown_transformed.shape == (1, len(feature_names)), \
+        "Transform de categoría desconocida cambió el shape esperado"
+    assert not np.isnan(X_unknown_transformed).any(), \
+        "Transform de categoría desconocida produjo NaN"
+ 
     print("    Smoke test de features.py: OK")
     print(f"   Features totales post-transformación: {X_transformed.shape[1]}")
+    print(f"   Capa 2 (handle_unknown='ignore'): OK — categoría desconocida no rompe")
     print(f"   Nombres: {feature_names}")
 
 

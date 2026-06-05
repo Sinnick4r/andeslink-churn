@@ -31,7 +31,7 @@ from sklearn.pipeline import Pipeline
 
 from src.data import load_raw_data, split_data
 
-MODEL_PATH: Final[Path] = Path("models/churn_model_v1.joblib")
+MODEL_PATH: Final[Path] = Path("models/churn_model_v2.joblib")
 REPORTS_DIR: Final[Path] = Path("reports")
 METRICS_PATH: Final[Path] = REPORTS_DIR / "test_metrics.json"
 

@@ -9,12 +9,12 @@ stages:
       size: 342760
     - path: src/data.py
       hash: md5
-      md5: 9c903c55b8cba1819d4638604b00dd61
-      size: 3982
+      md5: 9b8c6f7294482e67ef032e734512486f
+      size: 3849
     - path: src/features.py
       hash: md5
-      md5: 79a11fc24abd8730b5aab87368ea7dd5
-      size: 8539
+      md5: 4bdae19b19727a3d56bd833981a72990
+      size: 10863
     params:
       params.yaml:
         split.random_seed: 42
@@ -29,45 +29,45 @@ stages:
       size: 342760
     - path: src/data.py
       hash: md5
-      md5: 9c903c55b8cba1819d4638604b00dd61
-      size: 3982
+      md5: 9b8c6f7294482e67ef032e734512486f
+      size: 3849
     - path: src/features.py
       hash: md5
-      md5: 79a11fc24abd8730b5aab87368ea7dd5
-      size: 8539
+      md5: 4bdae19b19727a3d56bd833981a72990
+      size: 10863
     - path: src/train.py
       hash: md5
-      md5: f5e97a7882a38754ad5033aec9e4f49a
-      size: 12105
+      md5: 953ef6ff5f939404fba5629d31913a53
+      size: 11744
     params:
       params.yaml:
         split.random_seed: 42
         train.max_depth: 12
         train.n_estimators: 200
     outs:
-    - path: models/churn_model_v1.joblib
+    - path: models/churn_model_v2.joblib
       hash: md5
-      md5: 20889bb193103d705f8306ba84406f4c
+      md5: 3ff308302586357b0703a1018df697a5
       size: 7175
     - path: reports/train_metrics.json
       hash: md5
-      md5: 8c60d0bcf8e8df91b08912cea46ca690
-      size: 944
+      md5: 4be3a2193151f104fe175824efbc4523
+      size: 914
   evaluate:
     cmd: python -m src.evaluate
     deps:
-    - path: models/churn_model_v1.joblib
+    - path: models/churn_model_v2.joblib
       hash: md5
-      md5: 20889bb193103d705f8306ba84406f4c
+      md5: 3ff308302586357b0703a1018df697a5
       size: 7175
     - path: src/data.py
       hash: md5
-      md5: 9c903c55b8cba1819d4638604b00dd61
-      size: 3982
+      md5: 9b8c6f7294482e67ef032e734512486f
+      size: 3849
     - path: src/evaluate.py
       hash: md5
-      md5: adbf052347f1193c109c47b222bc4b5f
-      size: 7835
+      md5: 83b1f33b2d9c0ca065d0a8e0fa3abf8a
+      size: 7578
     outs:
     - path: reports/eda_07_evaluation_test.png
       hash: md5
@@ -75,5 +75,5 @@ stages:
       size: 138803
     - path: reports/test_metrics.json
       hash: md5
-      md5: 6ee9789acdf1e1aa507ba6595fe440ad
-      size: 279
+      md5: 3c673d2397c7a010e39c868074d99e22
+      size: 267

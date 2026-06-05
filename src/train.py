@@ -35,8 +35,8 @@ from src.features import build_preprocessor
 RANDOM_SEED: Final[int] = 42
 MODEL_DIR: Final[Path] = Path("models")
 REPORTS_DIR: Final[Path] = Path("reports")
-EXPERIMENT_NAME: Final[str] = "andeslink-churn-e1"
-MODEL_FILENAME: Final[str] = "churn_model_v1.joblib"
+EXPERIMENT_NAME: Final[str] = "andeslink-churn-e2"
+MODEL_FILENAME: Final[str] = "churn_model_v2.joblib"
 F1_TOLERANCE = 0.005
 
 # Ante diferencias despreciables, elijo siempre el modelo mas simple
@@ -207,7 +207,7 @@ def run_experiment() -> None:
 
     Side effects:
     - Escribe runs en mlruns/ (MLflow local)
-    - Escribe models/churn_model_v1.joblib
+    - Escribe models/churn_model_v2.joblib
     - Escribe reports/train_metrics.json
     """
     # Setup
