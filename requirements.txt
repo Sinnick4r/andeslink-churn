@@ -1,0 +1,29 @@
+# requirements.txt — runtime del API de inferencia (Dockerfile principal).
+# Versiones EXACTAS (==)
+# Corre `pip audit` antes de cada entrega. Solo lo que el runtime importa 
+
+
+
+# scikit-learn pinneado EXACTO: el .joblib es version-sensitive
+scikit-learn==1.5.2
+
+# Web framework + server ASGI.
+fastapi==0.115.0
+uvicorn==0.32.0
+
+# Contratos y validación.
+pydantic==2.9.0
+
+# Datos / feature engineering en serving (add_derived_features) e inferencia.
+numpy==1.26.4
+pandas==2.2.3
+
+# Carga del artefacto serializado.
+joblib==1.4.2
+
+# Logging estructurado.
+loguru==0.7.2
+
+# NOTA: httpx vive en requirements-ci.txt (solo se usa para el TestClient en tests).
+# NOTA: prometheus-fastapi-instrumentator / prometheus-client se agregan cuando se
+#       cablee el endpoint /metrics 
