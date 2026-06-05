@@ -100,9 +100,7 @@ def add_derived_features(df: pd.DataFrame) -> pd.DataFrame:
     # postcondiciones
     assert not df["charges_per_month"].isnull().any(), "NaN en charges_per_month"
     assert not df["tickets_per_year"].isnull().any(), "NaN en tickets_per_year"
-    assert (
-        df["charges_per_month"] >= 0
-    ).all(), "charges_per_month con valores negativos"
+    assert (df["charges_per_month"] >= 0).all(), "charges_per_month con valores negativos"
     assert (df["tickets_per_year"] >= 0).all(), "tickets_per_year con valores negativos"
 
     return df
@@ -128,7 +126,7 @@ def build_preprocessor() -> ColumnTransformer:
         se usa en paths que no pasan por Pydantic: jobs de reentrenamiento con datos
         nuevos, scripts de drift simulation, integraciones futuras. Para esos casos,
         handle_unknown='ignore' evita que el pipeline explote.
- 
+
         Comportamiento concreto con drop='first' + handle_unknown='ignore':
         una categoría desconocida produce una fila all-zeros en las dummies de esa
         columna. sklearn la trata como la categoría de referencia implícita (la que
@@ -192,17 +190,13 @@ def get_feature_names(preprocessor: ColumnTransformer) -> list[str]:
         RuntimeError: si el preprocessor no fue fiteado previamente.
     """
     try:
-        cat_encoder: OneHotEncoder = preprocessor.named_transformers_[
-            "cat"
-        ].named_steps["encoder"]
+        cat_encoder: OneHotEncoder = preprocessor.named_transformers_["cat"].named_steps["encoder"]
     except AttributeError as exc:
         raise RuntimeError(
             "El preprocessor no fue fiteado. Llamá a preprocessor.fit() primero."
         ) from exc
 
-    cat_names: list[str] = cat_encoder.get_feature_names_out(
-        CATEGORICAL_FEATURES
-    ).tolist()
+    cat_names: list[str] = cat_encoder.get_feature_names_out(CATEGORICAL_FEATURES).tolist()
     return NUMERIC_FEATURES + cat_names
 
 
@@ -258,7 +252,7 @@ def _smoke_test() -> None:
     assert X_transformed.shape[1] == len(feature_names)
     assert not np.isnan(X_transformed).any()
 
-    #test handle unknown="ignore": validación del fix post-feedback Mosquera.
+    # test handle unknown="ignore": validación del fix post-feedback Mosquera.
     # Antes (handle_unknown="error"), este transform tiraba ValueError.
     # Ahora, una categoría no vista produce all-zeros en las dummies de esa columna.
     unknown_sample = pd.DataFrame(
@@ -284,15 +278,18 @@ def _smoke_test() -> None:
     unknown_feat = add_derived_features(unknown_sample)
     X_unknown = unknown_feat.drop(columns=["churn"])
     X_unknown_transformed = preprocessor.transform(X_unknown)  # NO debe explotar
- 
-    assert X_unknown_transformed.shape == (1, len(feature_names)), \
-        "Transform de categoría desconocida cambió el shape esperado"
-    assert not np.isnan(X_unknown_transformed).any(), \
-        "Transform de categoría desconocida produjo NaN"
- 
+
+    assert X_unknown_transformed.shape == (
+        1,
+        len(feature_names),
+    ), "Transform de categoría desconocida cambió el shape esperado"
+    assert not np.isnan(
+        X_unknown_transformed
+    ).any(), "Transform de categoría desconocida produjo NaN"
+
     print("    Smoke test de features.py: OK")
     print(f"   Features totales post-transformación: {X_transformed.shape[1]}")
-    print(f"   Capa 2 (handle_unknown='ignore'): OK — categoría desconocida no rompe")
+    print("   Capa 2 (handle_unknown='ignore'): OK — categoría desconocida no rompe")
     print(f"   Nombres: {feature_names}")
 
 

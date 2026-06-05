@@ -67,9 +67,7 @@ def find_optimal_threshold(
 
     # precision_recall_curve retorna len(thresholds) = len(precisions) - 1
     # El ult. punto (recall=0, precision=1) no tiene threshold asociado
-    f1_scores = (
-        2 * (precisions[:-1] * recalls[:-1]) / (precisions[:-1] + recalls[:-1] + 1e-8)
-    )
+    f1_scores = 2 * (precisions[:-1] * recalls[:-1]) / (precisions[:-1] + recalls[:-1] + 1e-8)
     best_idx = int(np.argmax(f1_scores))
     return round(float(thresholds[best_idx]), 6)
 
@@ -146,7 +144,8 @@ def train_and_evaluate(
     y_train: pd.Series,
     y_val: pd.Series,
 ) -> dict[str, Any]:
-    # Entrena un pipeline completo, evalua en validación, devuelve Dict con pipeline, threshold, metricas y reporte.
+    # Entrena un pipeline completo, evalua en validación,
+    # makdevuelve Dict con pipeline, threshold, metricas y reporte.
 
     # Precondiciones
     assert X_train.shape[0] == y_train.shape[0], "X_train e y_train tienen distinto n"

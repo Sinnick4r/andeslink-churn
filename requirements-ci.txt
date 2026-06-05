@@ -1,0 +1,11 @@
+# Dependencias mínimas para CI (GitHub Actions).
+# Objetivo: instalación rápida (~30s) para correr ruff + smoke tests.
+# Para desarrollo local usar environment.yml (conda).
+# Cuando se agreguen tests de la API en S5, sumar fastapi + httpx acá.
+
+ruff==0.6.9
+scikit-learn==1.5.2
+numpy==1.26.4
+pandas==2.2.3
+joblib==1.4.2
+pytest==8.3.5

@@ -87,9 +87,7 @@ def split_data(
     )
 
     total_split = len(X_train) + len(X_val) + len(X_test)
-    assert total_split == len(
-        df
-    ), f"Se perdieron filas en el split: {len(df)} → {total_split}"
+    assert total_split == len(df), f"Se perdieron filas en el split: {len(df)} → {total_split}"
 
     # estratificación correcta?
     for name, y_split in [("train", y_train), ("val", y_val), ("test", y_test)]:
