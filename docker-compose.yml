@@ -1,0 +1,44 @@
+# Orquestacion local del stack del proyecto
+# En esta version solo se levanta el servicio del API
+
+services:
+  api:
+    container_name: andeslink-churn-api
+    image: andeslink-churn-api:v2
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+
+    # Hardening del container
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m
+    mem_limit: 512m
+    cpus: "1.0"
+
+    environment:
+      MODEL_PATH: /app/models/churn_model_v2.joblib
+      MODEL_VERSION: v2
+      THRESHOLD: "0.441444"
+      ENV: production
+      LOG_LEVEL: INFO
+
+    # Puerto al host para validacion local con curl o el TestClient
+    # Cuando la GUI se integre, este puerto se cierra y el API queda
+    # accesible solo desde la red interna de docker
+    ports:
+      - "8000:8000"
+
+    healthcheck:
+      test:
+        - "CMD"
+        - "python"
+        - "-c"
+        - "import urllib.request, sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status == 200 else 1)"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
