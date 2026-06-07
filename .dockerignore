@@ -1,0 +1,60 @@
+# Datos crudos y artefactos voluminosos
+data/
+mlruns/
+models/*.dvc
+churn_sintetico.csv
+
+# Componentes que no son el runtime del API
+gui/
+notebooks/
+tests/
+reports/
+scripts/
+monitoring/
+
+# Metadata de Git y DVC
+.git/
+.gitignore
+.gitattributes
+.dvc/cache/
+.dvc/tmp/
+.dvcignore
+
+# Caches de Python y tooling
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Entorno de desarrollo y configuracion de tooling
+.env
+.env.*
+*.egg-info/
+.venv/
+venv/
+environment.yml
+pyproject.toml
+Makefile
+
+# Requirements de otros componentes
+requirements-ci.txt
+requirements-gui.txt
+
+# Configuracion de pipeline DVC y parametros (no se necesita en runtime)
+dvc.yaml
+dvc.lock
+params.yaml
+
+# Documentos
+*.md
+*.pdf
+*.ipynb
+*.json
+
+# Editor y SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
