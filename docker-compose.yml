@@ -1,6 +1,9 @@
 # Orquestacion local del stack del proyecto
-# En esta version solo se levanta el servicio del API
+# Dos servicios: api (FastAPI) y gui (Streamlit), conectados por una
+# red interna de docker. La gui consume a la api a traves del DNS interno
+# (http://api:8000), no por localhost
 
+ 
 services:
   api:
     container_name: andeslink-churn-api
@@ -9,7 +12,10 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
-
+ 
+    networks:
+      - internal
+ 
     # Hardening del container
     security_opt:
       - no-new-privileges:true
@@ -18,20 +24,19 @@ services:
       - /tmp:size=64m
     mem_limit: 512m
     cpus: "1.0"
-
+ 
     environment:
       MODEL_PATH: /app/models/churn_model_v2.joblib
       MODEL_VERSION: v2
       THRESHOLD: "0.441444"
       ENV: production
       LOG_LEVEL: INFO
-
-    # Puerto al host para validacion local con curl o el TestClient
-    # Cuando la GUI se integre, este puerto se cierra y el API queda
-    # accesible solo desde la red interna de docker
+ 
+    # Puerto expuesto al host para que el evaluador pueda probar la API
+    # directamente con curl o Postman ademas de la GUI
     ports:
       - "8000:8000"
-
+ 
     healthcheck:
       test:
         - "CMD"
@@ -42,3 +47,57 @@ services:
       timeout: 5s
       retries: 3
       start_period: 20s
+ 
+  gui:
+    container_name: andeslink-churn-gui
+    image: andeslink-churn-gui:v2
+    build:
+      context: .
+      dockerfile: Dockerfile.gui
+    restart: unless-stopped
+ 
+    # La GUI espera a que la API este healthy antes de arrancar
+    # Si la API falla en su startup, la GUI no se levanta
+    depends_on:
+      api:
+        condition: service_healthy
+ 
+    networks:
+      - internal
+ 
+    # Mismo hardening que la API
+    # tmpfs en /tmp soporta el HOME=/tmp del Dockerfile.gui: ahi vive
+    # la config interna de Streamlit con el filesystem read_only
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m
+    mem_limit: 512m
+    cpus: "1.0"
+ 
+    environment:
+      # Resolucion de la API por DNS interno de docker
+      # No usar localhost: ambos containers tienen su propio loopback
+      API_URL: http://api:8000
+ 
+    ports:
+      - "8501:8501"
+ 
+    healthcheck:
+      test:
+        - "CMD"
+        - "python"
+        - "-c"
+        - "import urllib.request, sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8501/_stcore/health').status == 200 else 1)"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+ 
+# Red interna nombrada explicitamente para hacer obvia la topologia
+# Los containers se resuelven entre si por el nombre del servicio:
+# desde gui se accede a la api con http://api:8000
+networks:
+  internal:
+    driver: bridge
