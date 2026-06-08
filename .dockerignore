@@ -4,8 +4,8 @@ mlruns/
 models/*.dvc
 churn_sintetico.csv
 
-# Componentes que no son el runtime del API
-gui/
+# Componentes que no son el runtime de la API
+#gui/
 notebooks/
 tests/
 reports/
@@ -40,7 +40,7 @@ Makefile
 
 # Requirements de otros componentes
 requirements-ci.txt
-requirements-gui.txt
+#requirements-gui.txt
 
 # Configuracion de pipeline DVC y parametros (no se necesita en runtime)
 dvc.yaml
