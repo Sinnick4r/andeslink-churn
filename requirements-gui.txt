@@ -1,0 +1,5 @@
+# requirements-gui.txt - runtime de la GUI Streamlit
+# Solo lo que gui/app.py importa, mas el server propio de Streamlit
+
+streamlit==1.39.0
+httpx==0.27.2
