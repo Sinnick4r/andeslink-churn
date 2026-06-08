@@ -1,0 +1,80 @@
+# syntax=docker/dockerfile:1.7
+
+# Stage 1: builder
+# Instala las dependencias de la GUI en un venv aislado
+
+FROM python:3.11-slim-bookworm AS builder
+
+ENV PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+WORKDIR /build
+
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+RUN pip install pip==24.2
+
+# Solo las deps de la GUI (Streamlit + httpx)
+# requirements.txt de la API no se copia: la GUI no necesita sklearn ni pandas
+COPY requirements-gui.txt .
+RUN pip install -r requirements-gui.txt
+
+
+
+# Stage 2: runtime
+# Imagen final liviana solo con el venv, el codigo de la GUI y el usuario
+# de sistema sin shell
+
+FROM python:3.11-slim-bookworm AS runtime
+
+# Parches de seguridad del SO
+RUN apt-get update \
+    && apt-get -y --no-install-recommends upgrade \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Usuario y grupo del sistema sin home y sin shell de login
+RUN groupadd --system appgroup \
+    && useradd --system \
+        --gid appgroup \
+        --no-create-home \
+        --shell /usr/sbin/nologin \
+        appuser
+
+COPY --from=builder /opt/venv /opt/venv
+
+# Variables de runtime
+# HOME=/tmp permite que Streamlit escriba su config en una tmpfs writable
+# cuando el container corre con read_only=true en el compose
+ENV PATH="/opt/venv/bin:$PATH" \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    HOME=/tmp \
+    STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
+
+WORKDIR /app
+
+# Solo el codigo de la GUI: no necesita src/, models/, ni requirements de la API
+COPY gui/ ./gui/
+
+RUN chown -R appuser:appgroup /app
+
+USER appuser
+
+EXPOSE 8501
+
+# Streamlit expone su propio endpoint de readiness en /_stcore/health
+# Devuelve 200 cuando el server termino de inicializar y esta listo
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD python -c "import urllib.request, sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8501/_stcore/health').status == 200 else 1)" \
+    || exit 1
+
+# Streamlit en modo headless (sin abrir browser local) y escuchando en
+# todas las interfaces para que sea accesible desde fuera del container
+CMD ["streamlit", "run", "gui/streamlit_app.py", \
+     "--server.port=8501", \
+     "--server.address=0.0.0.0", \
+     "--server.headless=true", \
+     "--browser.gatherUsageStats=false"]
