@@ -26,7 +26,7 @@ RUN pip install -r requirements.txt
 
 
 # Stage 2: runtime
-# Imagen final liviana. Solo Python, el venv ya armado, el codigo del API
+# Imagen final. Solo Python, el venv ya armado, el codigo de la API
 # y el artefacto del modelo. Corre como usuario no-root sin shell
 
 FROM python:3.11-slim-bookworm AS runtime
@@ -57,7 +57,8 @@ ENV PATH="/opt/venv/bin:$PATH" \
 
 WORKDIR /app
 
-# Solo el codigo y el artefacto que el API necesita en runtime
+
+# Solo el codigo y el artefacto que la API necesita en runtime
 # src/ es necesario porque main.py importa add_derived_features desde src.features
 # para compartir la misma feature engineering que se usa en training
 COPY app/ ./app/
