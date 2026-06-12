@@ -1,329 +1,103 @@
-[![CI](https://github.com/Sinnick4r/analisis-eventos-NOAA/actions/workflows/ci.yml/badge.svg)](https://github.com/Sinnick4r/analisis-eventos-NOAA/actions/workflows/ci.yml)
-![Python](https://img.shields.io/badge/python-3.11%2B-blue)
-[![Ruff](https://img.shields.io/badge/lint-ruff-261230)](https://github.com/astral-sh/ruff)
-
-### Trabajo Practico:  Predicción de Churn
-Proyecto de **MLOps end-to-end** para el Laboratorio de Minería de Dato. 
-Resuelve un caso de clasificación binaria de
-abandono de clientes (churn) para la empresa **AndesLink Servicios
-Digitales S.A.**, cubriendo el ciclo completo: entrenamiento reproducible,
-despliegue como API + GUI, y monitoreo técnico y de datos.
-
-**Estado actual:** Entrega 1 (Entrenamiento) cerrada. Enrega 2 (Despliegue) y Entrega 3
-(Monitoreo) en desarrollo.
-
+### Trabajo Practico: Predicción de Churn
+ 
+Proyecto de **MLOps end-to-end** para el Laboratorio de Minería de Datos.
+Resuelve un caso de clasificación binaria de abandono de clientes (churn) para
+la empresa **AndesLink Servicios Digitales S.A.**, cubriendo el ciclo completo:
+entrenamiento reproducible, despliegue como API + GUI containerizada, y
+monitoreo técnico y de datos.
+ 
+**Estado actual:** Entrega 1 (Entrenamiento) y Entrega 2 (Despliegue) cerradas.
+Entrega 3 (Monitoreo) en desarrollo.
+ 
 ---
-
-## Informacion del proyecto
-
+ 
+## Información del proyecto
+ 
 - **Materia:** Laboratorio de Minería de Datos
 - **Institución:** ISTEA
 - **Profesor:** Diego Mosquera
-- **Alumno**: Emilio Gomez Lencina
+- **Alumno:** Emilio Gomez Lencina
 - **Modalidad:** trabajo individual
-
 ---
-
-## Resultados de la Entrega 1
-
-| Métrica | Valor (test set, n=1.000) |
-|---------|---------------------------|
-| Modelo seleccionado | LogisticRegression |
-| F1-score | 0.6020 |
-| ROC-AUC | 0.7561 |
-| PR-AUC | 0.6155 |
-| Precision (churn) | 0.4881 |
-| Recall (churn) | 0.7853 |
-| Threshold calibrado | 0.441444 |
-
-> **Nota sobre la selección de modelo:** LogReg ganó por regla de tolerancia
-> (F1_TOLERANCE=0.005). En F1 absoluto, RandomForest dio marginalmente mejor
-> (0.6209 vs 0.6196, diferencia 0.0013 dentro del ruido estadistico). El criterio
-> de desempate prioriza simplicidad operativa: menor tamaño del artefacto,
-> inferencia más rápida en producción, coeficientes interpretables. 
-
-El detalle completo de decisiones, EDA, comparación de modelos, etc. esta en ->
-[`reports/informe_e1.md`](reports/informe_e1.md).
-
-Se puso por separado para facilitar la lectura.
-
+ 
+## Stack
+ 
+| Capa | Herramientas |
+|------|--------------|
+| Entrenamiento | Python 3.11, scikit-learn 1.5.2, pandas 2.2, numpy 1.26 |
+| Tracking y experimentos | MLflow 2.17 (file backend en `mlruns/`) |
+| Pipeline y versionado | DVC 3.55 (remote público en Backblaze B2) |
+| API de inferencia | FastAPI 0.115, Pydantic 2.9, uvicorn 0.32, loguru 0.7 |
+| GUI | Streamlit 1.39, httpx 0.27 |
+| Despliegue | Docker + Docker Compose v2 |
+| Calidad de código | ruff 0.6, pytest 8.3 |
+ 
 ---
-
-## Stack y prerequisitos
-
-### Software requerido
-
-- **Python 3.11** (vía Anaconda / Miniconda)
-- **Git** ≥ 2.30
-- **Sistema operativo:** desarrollado en Windows 10. Linux y macOS son compatibles
-  con ajustes mínimos en los comandos PowerShell mostrados abajo.
-
-### Stack del proyecto (versiones pinneadas en `environment.yml`)
-
-| Herramienta | Versión | Uso |
-|-------------|---------|-----|
-| Python | 3.11.x | Lenguaje base |
-| scikit-learn | 1.5.2 | Entrenamiento (versión exacta - el `.joblib` es version-sensitive) |
-| pandas | 2.2.x | Preparacion de datos |
-| numpy | 1.26.x | Pinneado para evitar conflicto con sklearn en numpy 2.x |
-| MLflow | 2.17.x | Tracking de experimentos (file backend en `mlruns/`) |
-| DVC | 3.55.x | Pipeline + data versioning (storage local) |
-| matplotlib / seaborn | 3.9.x / 0.13.x | Visualizaciones del EDA |
-| ruff | 0.6.x | Linter + formatter |
-
----
-
-## Setup desde cero 
-
-### Paso 1 - Clonar el repo
-
-```powershell
-git clone https://github.com/Sinnick4r/andeslink-churn andeslink-churn
+ 
+## Uso
+ 
+### Levantar el sistema (E1 + E2)
+ 
+```bash
+git clone https://github.com/Sinnick4r/andeslink-churn.git
 cd andeslink-churn
+dvc pull
+docker compose up -d --build
 ```
-
-### Paso 2 - Crear el entorno conda
-
-```powershell
+ 
+A los ~30 segundos el stack queda accesible en:
+ 
+- **GUI**: http://localhost:8501
+- **API**: http://localhost:8000 (endpoints `/health` y `/predict`)
+### Reentrenar el modelo (opcional)
+ 
+```bash
 conda env create -f environment.yml
 conda activate andeslink-churn
-```
-
-**Verificacion de versiones:**
-
-```powershell
-python -c "import sklearn; print('sklearn:', sklearn.__version__)"  # 1.5.2
-python -c "import numpy; print('numpy:', numpy.__version__)"        # 1.26.x
-python -c "import mlflow; print('mlflow:', mlflow.__version__)"     # 2.17.x
-```
-
-### Paso 3 - Colocar el CSV en `data/raw/`
-
-> **Observacion:** El proyecto usa DVC con storage local
-> **(sin remote configurado)**, por lo que el CSV se entrega por separado.
-
-Copiar el archivo `churn_sintetico.csv`  a la carpeta `data/raw/` y verificar que el hash coincide con el trackeado por DVC:
-
-```powershell
-dvc status data/raw/churn_sintetico.csv.dvc
-```
-
-Si todo está bien, debe imprimir `Data and pipelines are up to date.`
-
-### Paso 4 - Reproducir el pipeline completo
-
-```powershell
 dvc repro
 ```
-
-Este comando ejecuta los 3 stages declarados en `dvc.yaml`:
-
-```
-prepare  →  train  →  evaluate
-```
-
-Genera:
-
-- `models/churn_model_v1.joblib` (modelo serializado)
-- `reports/train_metrics.json` (metricas de los 3 modelos en validacion)
-- `reports/test_metrics.json` (metricas finales en test set)
-- `reports/eda_07_evaluation_test.png` (3 visualizaciones de evaluacion)
-
+ 
 ---
-
-## Validacion de la repro
-
-### Verificacion 1 - el modelo carga y predice
-
-```powershell
-python -c "import joblib; m = joblib.load('models/churn_model_v1.joblib'); print('Pipeline cargado OK:', type(m).__name__)"
-```
-
-Salida esperada: `Pipeline cargado OK: Pipeline`
-
-### Verificacion 2 - métricas idénticas en test set
-
-```powershell
-python -c "import json; print(json.dumps(json.load(open('reports/test_metrics.json')), indent=2))"
-```
-
-Salida esperada (los valores deben coincidir exactamente - `random_state=42`):
-
-```json
-{
-  "model": "models\\churn_model_v1.joblib",
-  "model_name": "LogisticRegression",
-  "threshold": 0.441444,
-  "test_size": 1000,
-  "f1": 0.602,
-  "roc_auc": 0.7561,
-  "pr_auc": 0.6155,
-  "precision_class1": 0.4881,
-  "recall_class1": 0.7853,
-  "support_class1": 340
-}
-```
-
-### Verificacion 3 - `dvc repro` desde cero es idempotente
-
-Borrando los registros y re-ejecutando, los resultados deben ser bit-exactos:
-
-**PowerShell:**
-```powershell
-Remove-Item models/churn_model_v1.joblib -ErrorAction SilentlyContinue
-Remove-Item reports/test_metrics.json -ErrorAction SilentlyContinue
-dvc repro
-```
-
-**Bash:**
-```bash
-rm -f models/churn_model_v1.joblib reports/test_metrics.json
-dvc repro
-```
-
-### Verificacion 4 - explorar los experimentos en MLflow UI
-
-```powershell
-mlflow ui --port 5000
-```
-
-Abrir [http://localhost:5000](http://localhost:5000) en el navegador. El experimento
-`andeslink-churn-e1` contiene 4 runs:
-
-| Run | F1 (val) | ROC-AUC (val) | Threshold |
-|-----|----------|---------------|-----------|
-| LogisticRegression | 0.6196 | 0.7544 | 0.441444 |
-| RandomForest | 0.6209 | 0.7503 | 0.409929 |
-| HistGradientBoosting | 0.6037 | 0.7461 | 0.304959 |
-| GANADOR_LogisticRegression | 0.6196 | - | 0.441444 |
-
-> **Nota:** RF tiene F1 marginalmente mayor (0.0013) pero LogReg fue seleccionado
-> por regla de tolerancia. Ver `reports/train_metrics.json` campo `selection_rule`
-> para detalle.
+ 
+## Estructura
+ 
+`app/` contiene la API FastAPI con sus contratos Pydantic. `gui/` contiene la
+GUI Streamlit. `src/` tiene el código de training compartido con el API (feature
+engineering, anti training-serving skew). `tests/` cubre API y GUI con 18 tests.
+Los Dockerfiles separan API y GUI en imágenes independientes orquestadas por
+`docker-compose.yml`. Toda la documentación técnica vive en `reports/`.
+ 
 ---
-
-## Notebooks
-
-### `notebooks/01_EDA_churn_dataset.ipynb` - Análisis exploratorio
-
-Cubre 9 secciones: distribución del target, descriptivas, boxplots por clase,
-categóricas vs churn, matriz de correlación, multicolinealidad de `total_charges`,
-correlaciones con el target, y conclusiones. Genera 6 PNGs en `reports/`.
-
-```powershell
-jupyter lab notebooks/01_EDA_churn_dataset.ipynb
-```
-
-Para ejecutar todo: `Kernel → Restart & Run All`.
-
-### `notebooks/02_Validacion_pycaret.ipynb` - Calidacion extra del modelo con PyCaret
-
-Validación independiente del modelo elegido usando PyCaret (`compare_models`). 
-**No es parte delpipeline DVC** - corre por separadoy se creo solo para validar el modelo elegido.
-
-> **Nota de instalacion:** PyCaret no está en `environment.yml` por su tamaño
-> de dependencias. Si se quiere re-ejecutar ese notebook:
-
- ```powershell
- pip install pycaret==3.3.2
- ```
-### `notebooks/03_Script_prediccion_churn.ipynb` - Validacion del modelo serializado
-
-Para verificar que el modelo carga y predice correctamente desde un script
-independiente (sin reentrenar):
-
-```powershell
-  jupyter lab notebooks/03_Script_prediccion_churn.ipynb
-```
-
-El notebook valida hash SHA-256 del artefacto, carga el pipeline,
-y permite probar predicciones con valores ingresados
-
+ 
+## Documentación técnica
+ 
+| Documento | Contenido |
+|-----------|-----------|
+| [`reports/informe_e1.md`](reports/informe_e1.md) | EDA, comparación de modelos, calibración del threshold, decisiones de E1 |
+| [`reports/informe_e2.md`](reports/informe_e2.md) | Arquitectura del despliegue, contrato del API, decisiones de E2 |
+| [`notebooks/01_EDA_churn_dataset.ipynb`](notebooks/01_EDA_churn_dataset.ipynb) | EDA detallado del dataset |
+| [`notebooks/02_Validacion_pycaret.ipynb`](notebooks/02_Validacion_pycaret.ipynb) | Validación cruzada del modelo con PyCaret |
+| [`notebooks/03_Script_prediccion_churn.ipynb`](notebooks/03_Script_prediccion_churn.ipynb) | Validación del modelo serializado |
+ 
 ---
-
-## Estructura del repositorio
-
-```
-andeslink-churn/
-├── data/
-│   ├── raw/churn_sintetico.csv.dvc   ← CSV trackeado por DVC
-│   ├── processed/.gitkeep
-│   └── current/.gitkeep
-├── notebooks/
-│   ├── 01_EDA_churn_dataset.ipynb       ← EDA completo
-│   ├── 02_Validacion_pycaret.ipynb      ← Evaluacion extra con PyCaret
-│   └── 03_Script_prediccion_churn.ipynb ← Notebook de prueba del modelo
-├── src/
-│   ├── features.py                   ← add_derived_features, build_preprocessor
-│   ├── data.py                       ← load_raw_data, split_data
-│   ├── train.py                      ← run_experiment, MLflow tracking
-│   └── evaluate.py                   ← evaluate_on_test, plot_evaluation
-├── app/                              ← placeholders E2 (FastAPI)
-├── gui/                              ← placeholder E2 (Streamlit)
-├── models/
-│   └── churn_model_v1.joblib         ← modelo serializado (DVC tracked)
-├── reports/
-│   ├── eda_01...07.png               ← 7 graficos del EDA + evaluación
-│   ├── train_metrics.json            ← comparativa de los 3 modelos
-│   ├── test_metrics.json             ← métricas finales en test
-│   ├── informe_e1.md                 ← informe tecnico completo
-│   └── conclusiones_eda.md           ← informe del EDA inicial del dataset
-├── dvc.yaml                          ← pipeline (3 stages)
-├── dvc.lock                          ← firma de reproducibilidad
-├── params.yaml                       ← parametros trackeados
-├── environment.yml                   ← entorno conda portable
-├── environment.lock.yml              ← versiones exactas (Windows)
-├── pyproject.toml                    ← configuración ruff
-└── README.md                         ← este archivo
-```
-
+ 
+## Resumen de decisiones técnicas
+ 
+**E1 (Entrenamiento)**: LogisticRegression seleccionado por regla de tolerancia
+F1 (RF marginalmente superior por 0.0013, dentro del ruido estadístico).
+Threshold calibrado a 0.441444 por curva precision-recall. Features derivadas
+`charges_per_month` y `tickets_per_year` compartidas entre training y serving.
+Split 64/16/20 estratificado con `random_state=42`. Detalle completo en
+[`informe_e1.md`](reports/informe_e1.md).
+ 
+**E2 (Despliegue)**: dos containers (API + GUI) en red interna de Docker,
+comunicación por DNS interno. Pydantic con `strict=True` y `Literal` en español
+como Capa 1 de defensa de categorías, combinado con `handle_unknown="ignore"`
+del OneHotEncoder como Capa 2. Threshold inyectado por env var. Hardening
+uniforme (multi-stage, usuario no-root sin shell, filesystem read-only).
+Trazabilidad por SHA-256 del modelo y `request_id` UUID4 por inferencia.
+Detalle completo en [`informe_e2.md`](reports/informe_e2.md).
+ 
 ---
-
-## Ejecutar entrenamiento sin DVC (uso interactivo)
-
-Si se quierencorrer los módulos manualmente sin pasar por `dvc repro`:
-
-```powershell
-# Entrenar los 3 modelos y serializar el ganador
-python -m src.train
-
-# Evaluar el modelo final sobre el test set
-python -m src.evaluate
-```
-
-Ambos scripts loguean en MLflow (`mlruns/`) y generan los artefactos en
-`models/` y `reports/`.
-
----
-
-## Lint y calidad del código
-
-El proyecto usa `ruff` configurado en `pyproject.toml`. Para verificar antes de
-cada commit:
-
-```powershell
-ruff check src/
-```
-
-Debe imprimir `All checks passed!` sin warnings.
-
----
-
-## Resumen de decisiones tecnicas 
-Las decisiones cerradas durante E1 están documentadas en detalle en
-[`reports/informe_e1.md`](reports/informe_e1.md). Resumen:
-
-- **Modelo:** LogisticRegression (seleccionado por regla de tolerancia F1; RF empata
-  técnicamente con diferencia 0.0013 en F1, dentro del ruido estadístico)
-- **Threshold:** 0.441444 calibrado por curva precision-recall (no se usó el default
-  de 0.5; el threshold por debajo de 0.5 favorece recall)
-- **Features descartadas:** `total_charges` (redundancia estructural con
-  `tenure_months × monthly_charge`)
-- **Features derivadas:** `charges_per_month`, `tickets_per_year`
-- **Split:** 64/16/20 double split estratificado, `random_state=42`
-- **Metrica principal:** F1 con prioridad de modelo mas simple (desbalance moderado, costo asimétrico FN > FP)
-
----
-
-
-*README última actualización: 09/05/2026.*
+ 
+*Última actualización: 09/06/2026*
