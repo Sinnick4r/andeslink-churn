@@ -1,3 +1,5 @@
+[![CI](https://github.com/Sinnick4r/andeslink-churn/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Sinnick4r/andeslink-churn/actions/workflows/ci.yml)
+
 ### Trabajo Practico: Predicción de Churn
  
 Proyecto de **MLOps end-to-end** para el Laboratorio de Minería de Datos.
