@@ -1,10 +1,10 @@
 [![CI](https://github.com/Sinnick4r/andeslink-churn/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Sinnick4r/andeslink-churn/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11-blue)](https://www.python.org/)
 ![Version](https://img.shields.io/badge/version-1.0-green)
-![Backblaze](https://img.shields.io/badge/Backblaze-%23E21E29.svg?style=flat&logo=Backblaze&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-005571.svg?style=flat&logo=fastapi)
-![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=fast&logo=docker&logoColor=white)
+[![DVC Data](https://img.shields.io/badge/DVC-945DD6?style=flat&logo=dvc&logoColor=white)](https://dvc.org)
 [![Ruff](https://img.shields.io/badge/lint-ruff-261230)](https://github.com/astral-sh/ruff)
+
+
 ### Trabajo Practico: Predicción de Churn
  
 Proyecto de **MLOps end-to-end** para el Laboratorio de Minería de Datos.
