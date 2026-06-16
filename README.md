@@ -78,6 +78,20 @@ A los ~30 segundos el stack queda accesible en:
 
 Para bajar el stack: `docker compose down`.
  
+ ### Evidencia de funcionamiento
+
+Construcción y arranque del stack con `make up-build` (build desde cero):
+
+![make up-build construyendo y levantando el stack](reports/docker_compose.gif)
+
+Estado de salud: ambos containers `healthy` y la API respondiendo en `/health`:
+
+![docker compose ps y curl al health endpoint](reports/chequeo.gif)
+
+Uso de la GUI: predicción individual de punta a punta consumiendo la API:
+
+![GUI Streamlit haciendo una predicción](reports/GUI.gif)
+
 ---
 ### Reentrenar el modelo (opcional)
 
@@ -92,6 +106,8 @@ dvc repro
 ```
 
 `dvc repro` reconstruye el pipeline completo (preparación de datos, entrenamiento y evaluación) y regenera `churn_model_v2.joblib`. Con `random_state=42`, el modelo reproduce el joblib original que esta en el bucket de Backclaze
+ 
+
  
  ---
 
