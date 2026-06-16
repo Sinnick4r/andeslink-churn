@@ -96,7 +96,7 @@ def evaluate_on_test(
     report: dict = classification_report(y_test, y_pred, output_dict=True)
 
     print("=" * 55)
-    print(f"EVALUACIÓN FINAL — TEST SET (n={len(y_test)})")
+    print(f"TEST SET FINAL  (n={len(y_test)})")
     print("=" * 55)
     print(f"  Threshold usado: {threshold}")
     print(f"  F1-score:        {f1:.4f}")

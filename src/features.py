@@ -38,7 +38,7 @@ NUMERIC_FEATURES: Final[list[str]] = [
     "num_products",
     "customer_age",
     "is_promo",
-    # Features derivadas — creadas por add_derived_features() antes del pipeline
+    # features derivadas creadas con add_derived_features() antes del pipeline
     "charges_per_month",
     "tickets_per_year",
 ]
@@ -121,7 +121,7 @@ def build_preprocessor() -> ColumnTransformer:
     garantiza que el pipeline no falle ante datos con nulos en producción
     (drift de calidad de datos).
     Sobre handle_unknown='ignore':
-        En producción, la Capa 1 (Pydantic Literal en el API) rechaza categorías
+        En producción, la Capa 1 (Pydantic Literal enla API) rechaza categorías
         desconocidas con 422 antes de llegar al modelo. Pero el preprocessor también
         se usa en paths que no pasan por Pydantic: jobs de reentrenamiento con datos
         nuevos, scripts de drift simulation, integraciones futuras. Para esos casos,
@@ -289,7 +289,7 @@ def _smoke_test() -> None:
 
     print("    Smoke test de features.py: OK")
     print(f"   Features totales post-transformación: {X_transformed.shape[1]}")
-    print("   Capa 2 (handle_unknown='ignore'): OK — categoría desconocida no rompe")
+    print("   Capa 2 (handle_unknown='ignore'): todo ok -> categoría desconocida no rompe")
     print(f"   Nombres: {feature_names}")
 
 

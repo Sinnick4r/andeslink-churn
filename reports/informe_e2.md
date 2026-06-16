@@ -39,12 +39,12 @@ flowchart LR
 | Modelo | scikit-learn pipeline (joblib) | n/a | Prediccion de probabilidad de churn |
 | DVC remote | Backblaze B2 | n/a | Source of truth del artefacto del modelo (binario fuera de Git) |
 
-Ambos containers se construyen sobre `python:3.11` con multi-stage builds: un `builder` instala dependencias en un venv aislado y un `runtime` minimal que solo carga el venv ya construido, el código de la aplicación y, en el caso del API, el `.joblib` del modelo.
+Ambos containers se construyen sobre `python:3.11` con multi-stage builds: un `builder` instala dependencias en un venv aislado y un `runtime` minimal que solo carga el venv ya construido, el código de la aplicación y, en el caso de la API, el `.joblib` del modelo.
 
 ## Flujo de inferencia
 
 1. Se completa el formulario en el browser (`http://localhost:8501`).
-2. Streamlit normaliza los tipos del formulario: `np.int64` y `np.float64` que devuelve `number_input` se castean a `int` y `float` nativos de Python para no chocar con la validación `strict=True` del API.
+2. Streamlit normaliza los tipos del formulario: `np.int64` y `np.float64` que devuelve `number_input` se castean a `int` y `float` nativos de Python para no chocar con la validación `strict=True` de la API.
 3. La GUI hace `httpx.post('http://api:8000/predict', json=payload)` resolviendo el hostname `api` por el DNS interno de Docker (no `localhost`).
 4. Un middleware de la API genera un `request_id` UUID4, lo agrega al header `X-Request-ID` de la respuesta y lo propaga al contexto del logger.
 5. Pydantic valida el payload con dos capas de defensa: tipos estrictos sin coerción (`strict=True`), prohibición de campos no declarados (`extra="forbid"`), enums explícitos en español (`Literal["anual", "bianual", "mensual"]`), y rangos de negocio (`tenure_months >= 0 and <= 600`, etc.). Cualquier mismatch devuelve 422.
@@ -64,7 +64,7 @@ Ambos containers se construyen sobre `python:3.11` con multi-stage builds: un `b
 
 **Hardening uniforme entre ambos servicios**: multi-stage build, usuario de sistema `appuser` sin home y con `/usr/sbin/nologin` como shell, `security_opt: no-new-privileges`, `read_only` filesystem con tmpfs solo en `/tmp`, `mem_limit: 512m`, `cpus: 1.0`. Las dos imágenes aplican el mismo patrón con adaptaciones puntuales (la GUI necesita `HOME=/tmp` para que Streamlit pueda escribir su config interna).
 
-**Healthchecks encadenados (`depends_on: condition: service_healthy`)**: la GUI no arranca hasta que el API termina su lifespan y empieza a responder 200 en `/health`. No es un `sleep` arbitrario: es readiness real. Si el modelo no carga (versión de sklearn incorrecta o `.joblib` ausente), la API falla en startup y la GUI directamente no se levanta, en lugar de quedar a medias.
+**Healthchecks encadenados (`depends_on: condition: service_healthy`)**: la GUI no arranca hasta que la API termina su lifespan y empieza a responder 200 en `/health`. No es un `sleep` arbitrario: es readiness real. Si el modelo no carga (versión de sklearn incorrecta o `.joblib` ausente), la API falla en startup y la GUI directamente no se levanta, en lugar de quedar a medias.
 
 ## Trazabilidad y auditoria
 
@@ -188,16 +188,16 @@ andeslink-churn/
 │   └── churn_model_v2.joblib     # DVC-tracked, NO en git
 ├── tests/
 │   ├── conftest.py
-│   ├── test_api.py               # 8 tests del API
+│   ├── test_api.py               # 8 tests de la API
 │   └── test_gui.py               # 10 tests de funciones puras
 ├── reports/
 │   ├── informe_e1.md
 │   ├── informe_e2.md             # Este documento
 │   └── test_metrics.json
-├── Dockerfile                    # imagen del API
+├── Dockerfile                    # imagen de la API
 ├── Dockerfile.gui                # imagen de la GUI
 ├── docker-compose.yml            # orquestación del stack
-├── requirements.txt              # runtime del API
+├── requirements.txt              # runtime de la API
 ├── requirements-gui.txt          # runtime de la GUI
 ├── requirements-ci.txt           # CI/CD + tests
 ├── dvc.yaml / dvc.lock           # pipeline de training versionado
@@ -208,4 +208,4 @@ andeslink-churn/
 
 Las instrucciones operativas de levantamiento del stack (clonado del repo, `dvc pull`, build, acceso) viven en el [README del repositorio](../README.md) para que sean lo primero que ve cualquier persona que llega al proyecto.
 
-La suite de tests (`pytest tests/`) reporta 18 tests verdes: 8 de aceptación contra el API real con modelo cargado vía lifespan, y 10 de las funciones puras de la GUI con `httpx.MockTransport`. Esto cubre happy path, validaciones 422, manejo de errores diferenciado y propagación del `request_id`.
+La suite de tests (`pytest tests/`) reporta 18 tests verdes: 8 de aceptación contra la API real con modelo cargado vía lifespan, y 10 de las funciones puras de la GUI con `httpx.MockTransport`. Esto cubre happy path, validaciones 422, manejo de errores diferenciado y propagación del `request_id`.
