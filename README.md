@@ -6,29 +6,29 @@
 
 
 ### Trabajo Practico: Predicción de Churn
-
+ 
 Proyecto de **MLOps end-to-end** para el Laboratorio de Minería de Datos.
 Resuelve un caso de clasificación binaria de abandono de clientes (churn) para
 la empresa **AndesLink Servicios Digitales S.A.**, cubriendo el ciclo completo:
 entrenamiento reproducible, despliegue como API + GUI containerizada, y
 monitoreo técnico y de datos.
-
+ 
 **Estado actual:** Entrega 1 (Entrenamiento) y Entrega 2 (Despliegue) cerradas.
 Entrega 3 (Monitoreo) en desarrollo.
-
+ 
 ---
-
+ 
 ## Información del proyecto
-
+ 
 - **Materia:** Laboratorio de Minería de Datos
 - **Institución:** ISTEA
 - **Profesor:** Diego Mosquera
 - **Alumno:** Emilio Gomez Lencina
 - **Modalidad:** trabajo individual
 ---
-
+ 
 ## Stack
-
+ 
 | Capa | Herramientas |
 |------|--------------|
 | Entrenamiento | Python 3.11, scikit-learn 1.5.2, pandas 2.2, numpy 1.26 |
@@ -38,25 +38,52 @@ Entrega 3 (Monitoreo) en desarrollo.
 | GUI | Streamlit 1.39, httpx 0.27 |
 | Despliegue | Docker + Docker Compose v2 |
 | Calidad de código | ruff 0.6, pytest 8.3 |
-
+ 
 ---
-
+ 
 ## Uso
+
+### Requisitos previos
+
+- **Docker** con **Docker Compose v2** (el comando es `docker compose`, con espacio, no el antiguo `docker-compose`).
+- **DVC** para traer el modelo entrenado desde el remote público (el `.joblib` no está versionado en git, se descarga aparte).
+- **make** (opcional): si no esta disponible, al final de esta seccion estan    n los comandos equivalentes.
 
 ### Levantar el sistema (E1 + E2)
 
 ```bash
 git clone https://github.com/Sinnick4r/andeslink-churn.git
 cd andeslink-churn
-dvc pull
+```
+
+Forma recomendada, con los targets de `make`:
+
+```bash
+make up-build   # primera vez: trae el modelo y construye las imágenes
+make up         # arranques siguientes: levanta sin reconstruir
+```
+
+Si `make` no está disponible, los comandos equivalentes son:
+
+```bash
+dvc pull models/churn_model_v2.joblib
 docker compose up -d --build
 ```
+> El `dvc pull` descarga el modelo ya entrenado en E1 (`churn_model_v2.joblib`), así que no hace falta entrenar nada para usar el sistema: el despliegue de E2 consume ese artefacto directamente. El entrenamiento solo es necesario si se quiere regenerar el modelo desde cero ().
 
 A los ~30 segundos el stack queda accesible en:
 
 - **GUI**: http://localhost:8501
 - **API**: http://localhost:8000 (endpoints `/health` y `/predict`)
+
+Para bajar el stack: `docker compose down`.
+ 
+---
 ### Reentrenar el modelo (opcional)
+
+El modelo entrenado ya viene resuelto por DVC, así que esto **no es necesario para usar el sistema**. Solo hace falta si se quiere regenerar el modelo desde cero a partir del pipeline de training versionado.
+
+Se ejecuta dentro del entorno conda del proyecto (no desde `base`, las versiones difieren):
 
 ```bash
 conda env create -f environment.yml
@@ -64,20 +91,22 @@ conda activate andeslink-churn
 dvc repro
 ```
 
----
+`dvc repro` reconstruye el pipeline completo (preparación de datos, entrenamiento y evaluación) y regenera `churn_model_v2.joblib`. Con `random_state=42`, el modelo reproduce el joblib original que esta en el bucket de Backclaze
+ 
+ ---
 
 ## Estructura
-
+ 
 `app/` contiene la API FastAPI con sus contratos Pydantic. `gui/` contiene la
 GUI Streamlit. `src/` tiene el código de training compartido con la API (feature
 engineering, anti training-serving skew). `tests/` cubre API y GUI con 18 tests.
 Los Dockerfiles separan API y GUI en imágenes independientes orquestadas por
 `docker-compose.yml`. Toda la documentación técnica vive en `reports/`.
-
+ 
 ---
-
+ 
 ## Documentación técnica
-
+ 
 | Documento | Contenido |
 |-----------|-----------|
 | [`reports/informe_e1.md`](reports/informe_e1.md) | EDA, comparación de modelos, calibración del threshold, decisiones de E1 |
@@ -85,18 +114,18 @@ Los Dockerfiles separan API y GUI en imágenes independientes orquestadas por
 | [`notebooks/01_EDA_churn_dataset.ipynb`](notebooks/01_EDA_churn_dataset.ipynb) | EDA detallado del dataset |
 | [`notebooks/02_Validacion_pycaret.ipynb`](notebooks/02_Validacion_pycaret.ipynb) | Validación cruzada del modelo con PyCaret |
 | [`notebooks/03_Script_prediccion_churn.ipynb`](notebooks/03_Script_prediccion_churn.ipynb) | Validación del modelo serializado |
-
+ 
 ---
-
+ 
 ## Resumen de decisiones técnicas
-
+ 
 **E1 (Entrenamiento)**: LogisticRegression seleccionado por regla de tolerancia
 F1 (RF marginalmente superior por 0.0013, dentro del ruido estadístico).
 Threshold calibrado a 0.441444 por curva precision-recall. Features derivadas
 `charges_per_month` y `tickets_per_year` compartidas entre training y serving.
 Split 64/16/20 estratificado con `random_state=42`. Detalle completo en
 [`informe_e1.md`](reports/informe_e1.md).
-
+ 
 **E2 (Despliegue)**: dos containers (API + GUI) en red interna de Docker,
 comunicación por DNS interno. Pydantic con `strict=True` y `Literal` en español
 como Capa 1 de defensa de categorías, combinado con `handle_unknown="ignore"`
@@ -104,7 +133,7 @@ del OneHotEncoder como Capa 2. Threshold inyectado por env var. Hardening
 uniforme (multi-stage, usuario no-root sin shell, filesystem read-only).
 Trazabilidad por SHA-256 del modelo y `request_id` UUID4 por inferencia.
 Detalle completo en [`informe_e2.md`](reports/informe_e2.md).
-
+ 
 ---
-
-*Última actualización: 09/06/2026*
+ 
+*actualización: 16/06/2026*
