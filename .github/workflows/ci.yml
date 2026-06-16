@@ -79,8 +79,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements-ci.txt
-          pip install 'dvc[http]==3.67.1' 'pathspec<0.12'
-          
+          pip install 'dvc[http]==3.55.2' 'pathspec<0.12'
       # trae el modelo desde el remote publico b2_read (es publico)
       - name: DVC pull (modelo)
         run: dvc pull models/churn_model_v2.joblib
