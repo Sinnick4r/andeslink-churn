@@ -1,4 +1,4 @@
-# Entrega 2: Despliegue de inferencia en producción local
+# Entrega 2: API, TESTING y GUI
 
 **Autor**: Emilio Gómez Lencina
 **Proyecto**: AndesLink Servicios Digitales S.A. - Predicción de churn
