@@ -77,7 +77,7 @@ def patch_httpx(monkeypatch: pytest.MonkeyPatch):
     return _patch
 
 
-# --- check_api_health ---
+#check_api_health
 
 
 def test_health_ok_returns_body(patch_httpx) -> None:
@@ -109,7 +109,7 @@ def test_health_timeout_friendly_message(patch_httpx) -> None:
     assert err is not None and "imeout" in err
 
 
-# --- call_predict ---
+#call_predict
 
 
 def test_predict_200_returns_body(patch_httpx) -> None:

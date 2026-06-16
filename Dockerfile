@@ -58,7 +58,7 @@ ENV PATH="/opt/venv/bin:$PATH" \
 WORKDIR /app
 
 
-# Solo el codigo y el artefacto que la API necesita en runtime
+# Solo el codigo y el modelo que la API necesita en runtime
 # src/ es necesario porque main.py importa add_derived_features desde src.features
 # para compartir la misma feature engineering que se usa en training
 COPY app/ ./app/

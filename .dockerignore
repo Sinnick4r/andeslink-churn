@@ -1,4 +1,4 @@
-# Datos crudos y artefactos voluminosos
+# Datos crudos y artefactos  grandes
 data/
 mlruns/
 models/*.dvc

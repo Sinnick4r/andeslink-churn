@@ -6,7 +6,7 @@
 
 ## Resumen
 
-La E2 entrega la capa de despliegue del modelo entrenado en E1. El sistema expone la inferencia a través de una API REST con contratos validados (FastAPI + Pydantic) y una interfaz gráfica (Streamlit) que la consume. Ambos componentes corren en containers separados orquestados por Docker Compose, comunicandose internamente y construidos siguiendo patrones de hardening uniforme (multi-stage, usuario no-root, filesystem read-only). El stack completo se levanta con un único `docker compose up -d` y permite tanto consumo interactivo (browser) como tambien usando curl / Postman si se requiriera
+Esta entrega es la capa de despliegue del modelo entrenado en E1. El sistema expone la inferencia a través de una API REST con contratos validados (FastAPI + Pydantic) y una interfaz gráfica (Streamlit) que la consume. Ambos componentes corren en containers separados orquestados por Docker Compose, comunicandose internamente y construidos siguiendo patrones de hardening uniforme (multi-stage, usuario no-root, filesystem read-only). El stack completo se levanta con un único `docker compose up -d` y permite tanto consumo interactivo (browser) como tambien usando curl si se requiriera
 
 ## Diagrama de arquitectura
 
@@ -34,7 +34,7 @@ flowchart LR
 
 | Componente | Tecnología | Puerto | Responsabilidad |
 |------------|-----------|--------|-----------------|
-| API | FastAPI + uvicorn | 8000 | Inferencia, validación de contratos, carga del modelo |
+| API | FastAPI + uvicorn | 8000 | Inferencia, validacion de contratos, carga del modelo |
 | GUI | Streamlit | 8501 | Formulario, llamadas HTTP a la API, render del resultado |
 | Modelo | scikit-learn pipeline (joblib) | n/a | Prediccion de probabilidad de churn |
 | DVC remote | Backblaze B2 | n/a | Source of truth del artefacto del modelo (binario fuera de Git) |
@@ -43,26 +43,26 @@ Ambos containers se construyen sobre `python:3.11` con multi-stage builds: un `b
 
 ## Flujo de inferencia
 
-1. Se completa el formulario en el browser (`http://localhost:8501`).
+1. Se seleccionan las opciones deseadas en el browser (`http://localhost:8501`).
 2. Streamlit normaliza los tipos del formulario: `np.int64` y `np.float64` que devuelve `number_input` se castean a `int` y `float` nativos de Python para no chocar con la validación `strict=True` de la API.
 3. La GUI hace `httpx.post('http://api:8000/predict', json=payload)` resolviendo el hostname `api` por el DNS interno de Docker (no `localhost`).
 4. Un middleware de la API genera un `request_id` UUID4, lo agrega al header `X-Request-ID` de la respuesta y lo propaga al contexto del logger.
-5. Pydantic valida el payload con dos capas de defensa: tipos estrictos sin coerción (`strict=True`), prohibición de campos no declarados (`extra="forbid"`), enums explícitos en español (`Literal["anual", "bianual", "mensual"]`), y rangos de negocio (`tenure_months >= 0 and <= 600`, etc.). Cualquier mismatch devuelve 422.
+5. Pydantic valida el payload con dos capas de defensa: tipos estrictos sin coerción (`strict=True`), prohibicion de campos no declarados (`extra="forbid"`), enums explícitos en español (`Literal["anual", "bianual", "mensual"]`), y rangos de negocio (`tenure_months >= 0 and <= 600`, etc.). Cualquier mismatch devuelve 422.
 6. Si la validación pasa, `main.py` construye un DataFrame de una fila, aplica `add_derived_features` (importada del mismo módulo que usó training: `src.features`) y llama a `pipeline.predict_proba`.
 7. La probabilidad obtenida se compara contra el threshold calibrado (`0.441444`, inyectado por env var desde el compose) para determinar la clase. La respuesta incluye `churn`, `probability`, `model_version`, `threshold` y `request_id`.
 8. La GUI parsea la respuesta, renderiza un badge verde o rojo según la clase, una barra de probabilidad con porcentaje y un expander con la metadata completa para trazabilidad.
 
 ## Decisiones de diseño
 
-**Separacion API + GUI en containers distintos**: aislamiento de fallas, posibilidad de escalar cada uno por separado en deployments futuros, hardening específico por servicio y, sobre todo, una arquitectura legible donde cada container tiene una responsabilidad clara y comunicable.
+**Separacion API + GUI en containers distintos**: lo mas importante es el aislamiento de fallas. Falla uno y no toca el otro. Ademas permite escalar cada uno por separado en deployments futuros con hardening específico por servicio y una arquitectura legible donde cada container tiene una responsabilidad clara y comunicable
 
-**`add_derived_features` compartida con training**: la función que calcula `charges_per_month` y `tickets_per_year` se importa del mismo módulo `src.features` que usa el pipeline de training. Single source of truth previene training/serving skew, que es la causa más común de bugs sutiles en sistemas ML: el modelo recibe en producción features con una distribución levemente distinta a la del fit y degrada silenciosamente.
+**`add_derived_features` compartida con training**: la funcion que calcula `charges_per_month` y `tickets_per_year` se importa del mismo módulo `src.features` que usa el pipeline de training. Single source of truth previene training/serving skew, que es la causa más común de bugs sutiles en sistemas ML: el modelo recibe en produccion features con una distribucion levemente distinta a la del fit y degrada silenciosamente
 
-**Pydantic `strict` + `Literal` + `extra="forbid"`**: defensa antes de tocar el modelo. Categorías desconocidas, tipos incorrectos o campos extra reciben 422 con mensaje generico (sin leak del detalle interno al cliente). Combinado con el `handle_unknown="ignore"` del `OneHotEncoder` (heredado de E1), constituye una defensa en dos capas.
+**Pydantic `strict` + `Literal` + `extra="forbid"`**: defensa antes de tocar el modelo. Categorias desconocidas, tipos incorrectos o campos extra reciben 422 con mensaje generico (sin leak del detalle interno al cliente). Combinado con el `handle_unknown="ignore"` del `OneHotEncoder` (heredado de E1), constituye una defensa en dos capas.
 
-**Threshold como variable de entorno**: el valor calibrado en E1 (`0.441444`) se inyecta al container vía `docker-compose.yml`, no se hardcodea en el código. Esto permite recalibrar el threshold y redeployar sin rebuildear la imagen, manteniendo el artefacto del modelo intacto. La trazabilidad se preserva porque cada respuesta incluye el `threshold` efectivamente aplicado.
+**Threshold como variable de entorno**: el valor calibrado en la Entrega 1 (`0.441444`) se inyecta al container via `docker-compose.yml`, no se hardcodea. Esto permite recalibrar el threshold y redeployar sin rebuildear la imagen, manteniendo el artefacto del modelo intacto. La trazabilidad se preserva porque cada respuesta incluye el `threshold` efectivamente aplicado.
 
-**Hardening uniforme entre ambos servicios**: multi-stage build, usuario de sistema `appuser` sin home y con `/usr/sbin/nologin` como shell, `security_opt: no-new-privileges`, `read_only` filesystem con tmpfs solo en `/tmp`, `mem_limit: 512m`, `cpus: 1.0`. Las dos imágenes aplican el mismo patrón con adaptaciones puntuales (la GUI necesita `HOME=/tmp` para que Streamlit pueda escribir su config interna).
+**Hardening uniforme entre ambos servicios**: multi-stage build, usuario de sistema `appuser` sin home y con `/usr/sbin/nologin` como shell, `security_opt: no-new-privileges`, `read_only` filesystem con tmpfs solo en `/tmp`, `mem_limit: 512m`, `cpus: 1.0`. Las dos imagenes aplican el mismo patrón con adaptaciones puntuales (la GUI necesita `HOME=/tmp` para que Streamlit pueda escribir su config interna).
 
 **Healthchecks encadenados (`depends_on: condition: service_healthy`)**: la GUI no arranca hasta que la API termina su lifespan y empieza a responder 200 en `/health`. No es un `sleep` arbitrario: es readiness real. Si el modelo no carga (versión de sklearn incorrecta o `.joblib` ausente), la API falla en startup y la GUI directamente no se levanta, en lugar de quedar a medias.
 
@@ -78,7 +78,7 @@ Cada decisión del sistema queda registrada para auditoría posterior:
 
 ## Contrato de la API
 
-La API expone dos endpoints HTTP. Acá se documenta el contrato de cada uno con ejemplos ejecutables en bash (`curl`) y PowerShell (`Invoke-RestMethod`).
+La API expone dos endpoints HTTP. Aca se documenta el contrato de cada uno con ejemplos ejecutables en bash (`curl`) y PowerShell (`Invoke-RestMethod`).
 
 ### GET /health
 
@@ -109,7 +109,7 @@ Si el modelo no está cargado, devuelve HTTP 503 con `model_loaded: false`.
 
 Recibe los 15 campos del cliente y devuelve la predicción de churn. Todos los campos son obligatorios y validados por Pydantic con tipos estrictos, rangos de negocio y enumerados explícitos.
 
-**Predicción válida (cliente de bajo riesgo)**:
+**Predicción valida (cliente de bajo riesgo)**:
 
 ```bash
 curl -X POST http://localhost:8000/predict \
@@ -149,7 +149,7 @@ Respuesta (HTTP 200):
 }
 ```
 
-**Validación rechazada (edad fuera de rango)**:
+**Validacion rechazada (edad fuera de rango)**:
 
 ```bash
 curl -X POST http://localhost:8000/predict \
@@ -209,3 +209,12 @@ andeslink-churn/
 Las instrucciones operativas de levantamiento del stack (clonado del repo, `dvc pull`, build, acceso) viven en el [README del repositorio](../README.md) para que sean lo primero que ve cualquier persona que llega al proyecto.
 
 La suite de tests (`pytest tests/`) reporta 18 tests verdes: 8 de aceptación contra la API real con modelo cargado vía lifespan, y 10 de las funciones puras de la GUI con `httpx.MockTransport`. Esto cubre happy path, validaciones 422, manejo de errores diferenciado y propagación del `request_id`.
+
+## Integración continua
+
+El repo incluye un workflow de gitHub Actions (`.github/workflows/ci.yml`) que se dispara en cada push y en cada pull request contra `main` y `dev`. El pipeline esta dividido en dos jobs con responsabilidades distintas, según dependan o no de recursos externos.
+
+**`quality-checks` (este es bloqueante):** corre el linting con ruff, los smoke tests de los modulos de `src/` y los 10 tests de funciones puras de la GUI (con `httpx.MockTransport`, sin red ni modelo). No depende de nada externo, así que siempre debe pasar: si este job falla, hay algun problema de fondo
+**`integration-tests` (este no es bloqueante):** instala DVC, trae el modelo desde el remote público en Backblaze B2 con `dvc pull` y corre los 8 tests de aceptación contra la API real, con el modelo cargado vía lifespan. Está marcado como `continue-on-error` a proposito: este job depende de que B2 esté disponible. Si por alguna razo Backblaze no esta online o hay problemas de conexión, No deberia bloquear,  hacer hacer que `main` este en rojo ni bloquear un merge.
+
+Más allá de correr la suite de tests, este segundo job funciona como verificación continua de reproducibilidad: en una corrida limpia, sin cache local, reconstruye el escenario que enfrenta cualquier cualquier persona (clonar, traer el modelo desde el remote, levantar la aplicación) y confirma que el pipeline sigue siendo portable en cada push. Es la automatización del mismo flujo que antes se validaba a mano

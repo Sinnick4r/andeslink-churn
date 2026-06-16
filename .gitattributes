@@ -1,4 +1,4 @@
-# Excluir notebooks de las estadísticas de lenguajes de GitHub
+# Se excluyen los notebooks de las estadísticas de lenguajes de GitHub
 # Los notebooks siguen versionados, solo no cuentan para el % de lenguajes
 # Eso es porque los notebook son chicos pero muy pesados en cuanto a graficos, distorcionan las estadisticas
 notebooks/*.ipynb linguist-detectable=false

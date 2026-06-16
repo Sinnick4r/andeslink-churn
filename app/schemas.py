@@ -1,4 +1,4 @@
-"""Contratos Pydantic v2 de la API de inferencia
+"""Contratos Pydantic de la API de inferencia
 
 - ``CustomerInput``: contrato de entrada de ``/predict``. ``strict=True`` +
   ``extra="forbid"`` para prevenir mass-assignment, con rangos de negocio y ``Literal``
@@ -14,9 +14,9 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-# Literals = valores exactos del dataset (en español).
-# Constituyen la Capa 1 de defensa contra categorías desconocidas:
-# el cliente recibe 422 con feedback antes de llegar al modelo.
+# Literals = valores exactos del dataset.
+# Constituyen la Capa 1 contra categorias desconocidas:
+# el cliente recibe 422 con feedback antes de llegar al modelo
 ContractType = Literal["anual", "bianual", "mensual"]
 PaymentMethod = Literal["credito", "debito", "efectivo", "transferencia"]
 InternetService = Literal["cable", "fibra", "movil", "ninguno"]
@@ -63,8 +63,7 @@ class PredictionResponse(BaseModel):
     qué condiciones se hizo la predicción - útil para post-mortem y comparación
     entre versiones del modelo.
     """
-
-    # protected_namespaces=() habilita el campo ``model_version`` sin disparar el
+    # protected_namespaces=() habilita el campo ``model_version`` sin tirar el
     # warning de pydantic por el prefijo reservado ``model_``.
     model_config = ConfigDict(protected_namespaces=())
 

@@ -1,7 +1,7 @@
-"""Configuración central de la API.
+"""Confi¡ central de la API
 
 Toda la configuración git log: no hay credenciales, rutas absolutas ni secretos
-hardcodeados. Se materializa una única instancia inmutable ``settings`` al
+hardcodeados. Se materializa una instancia inmutable ``settings`` al
 importar el módulo.
 """
 
@@ -18,7 +18,7 @@ from typing import Final
 # por eso el valor calibrado se inyecta por entorno (compose) con este default.
 DEFAULT_MODEL_PATH: Final[str] = "models/churn_model_v2.joblib"
 DEFAULT_MODEL_VERSION: Final[str] = "v2"
-DEFAULT_THRESHOLD: Final[float] = 0.441444  # F1-óptimo en val (LogisticRegression, E1)
+DEFAULT_THRESHOLD: Final[float] = 0.441444  # F1 establecido en E1
 DEFAULT_ENV: Final[str] = "dev"
 DEFAULT_LOG_LEVEL: Final[str] = "INFO"
 

@@ -1,7 +1,6 @@
 # Orquestacion local del stack del proyecto
-# Dos servicios: api (FastAPI) y gui (Streamlit), conectados por una
-# red interna de docker. La gui consume a la api a traves del DNS interno
-# (http://api:8000), no por localhost
+# dos servicios: api (FastAPI) y gui (Streamlit), conectados internamente por docker. 
+#La gui consume a la api a traves del DNS interno (http://api:8000), no por localhost
 
  
 services:

@@ -31,7 +31,7 @@ def client() -> Iterator[TestClient]:
 
 @pytest.fixture
 def valid_payload_factory() -> Callable[..., dict[str, Any]]:
-    # Devuelve una factory que arma payloads válidos con overrides parciales
+    # Devuelve una factory que arma payloads validos con overrides parciales
     base: dict[str, Any] = {
         "tenure_months": 24,
         "monthly_charge": 65.5,
