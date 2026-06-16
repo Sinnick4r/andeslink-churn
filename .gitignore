@@ -1,4 +1,4 @@
-# Data (DVC tracked — no van a git)
+# Data (DVC tracked - no van a git)
 data/raw/*
 !data/raw/.gitkeep
 !data/raw/*.dvc

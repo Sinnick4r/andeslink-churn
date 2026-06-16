@@ -1,8 +1,8 @@
-# Makefile — Proyecto AndesLink Churn MLOps
+# Makefile del Proyecto AndesLink Churn MLOps
 # Comandos para desarrollo local y CI.
 # Uso: `make <target>` o `make help` para listar opciones.
 
-.PHONY: help check fix format smoke test all clean
+.PHONY: help check fix format smoke test all clean pull up-build up
 
 # Target default: muestra ayuda
 help:
@@ -49,3 +49,11 @@ clean:
 	find . -type d -name ".ruff_cache" -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name ".mypy_cache" -exec rm -rf {} + 2>/dev/null || true
 	find . -type f -name "*.pyc" -delete 2>/dev/null || true
+pull:
+	dvc pull models/churn_model_v2.joblib
+
+up-build: pull
+	docker compose up -d --build
+
+up: pull
+	docker compose up -d

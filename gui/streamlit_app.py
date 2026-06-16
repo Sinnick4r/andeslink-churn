@@ -212,7 +212,7 @@ def render_ui() -> None:
 
     # Badge de status arriba con info del modelo cargado
     col_a, col_b, col_c = st.columns(3)
-    col_a.success("API conectado")
+    col_a.success("API conectada")
     col_b.metric("Modelo", health_body["model_version"])
     col_c.metric("scikit-learn", health_body["sklearn_version"])
 

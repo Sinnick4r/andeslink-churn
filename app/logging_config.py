@@ -21,7 +21,7 @@ def configure_logging() -> None:
     """Configura el sink global de loguru.
 
     Side effect (guía 2.4): reemplaza todos los handlers previos de loguru.
-    Idempotente — puede llamarse más de una vez sin acumular sinks.
+    Idempotente--> puede llamarse más de una vez sin acumular sinks
     """
     logger.remove()
 

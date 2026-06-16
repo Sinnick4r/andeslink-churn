@@ -1,1 +1,1 @@
-"""Paquete de la API de inferencia de churn — AndesLink MLOps (E2)."""
+"""Paquete de la API de inferencia de churn (Entrega 2)."""

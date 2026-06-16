@@ -1,4 +1,4 @@
-"""API de inferencia de churn — FastAPI.
+"""API de inferencia de churn con FastAPI.
 
 Wiring:
 - ``lifespan`` carga el modelo una sola vez al startup; si falla, la app no arranca.
@@ -31,7 +31,7 @@ from app.schemas import CustomerInput, HealthResponse, PredictionResponse
 # add_derived_features se importa del MISMO módulo usado en training (src/features.py).
 # Single source of truth -> sin training/serving skew: la feature engineering en
 # serving es idéntica byte a byte a la de entrenamiento.
-# Nota de despliegue: el Dockerfile del API debe copiar src/features.py al container.
+# Nota de despliegue: el Dockerfile de la API debe copiar src/features.py al container.
 from src.features import add_derived_features
 
 
@@ -41,7 +41,7 @@ async def lifespan(app: FastAPI):
     configure_logging()
     logger.info("Startup: cargando artefacto del modelo")
     # Si load_pipeline hace raise (versión incompatible o archivo ausente),
-    # el startup se corta y la app NO arranca — comportamiento deseado.
+    # el startup se corta y la app NO arranca
     app.state.pipeline = load_pipeline(settings.model_path)
     app.state.threshold = settings.threshold
     app.state.model_version = settings.model_version
@@ -100,7 +100,7 @@ def run_inference(pipeline: Any, customer: CustomerInput) -> tuple[int, float]:
         customer: input validado por Pydantic.
 
     Returns:
-        ``(churn, probability)`` — clase binaria según el threshold y probabilidad
+        ``(churn, probability)`` es una clase binaria según el threshold y probabilidad
         de la clase positiva.
     """
     frame = pd.DataFrame([customer.model_dump()])

@@ -1,6 +1,6 @@
-# requirements.txt — runtime del API de inferencia (Dockerfile principal).
+# requirements.txt  runtime de la API de inferencia (Dockerfile principal).
 # Versiones EXACTAS (==)
-# Corre `pip audit` antes de cada entrega. Solo lo que el runtime importa 
+# Corre `pip audit` antes de cada entrega. Solo lo que el runtime importa
 
 
 
@@ -26,4 +26,4 @@ loguru==0.7.2
 
 # NOTA: httpx vive en requirements-ci.txt (solo se usa para el TestClient en tests).
 # NOTA: prometheus-fastapi-instrumentator / prometheus-client se agregan cuando se
-#       cablee el endpoint /metrics 
+#       cablee el endpoint /metrics
