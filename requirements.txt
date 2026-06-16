@@ -2,8 +2,6 @@
 # Versiones EXACTAS (==)
 # Corre `pip audit` antes de cada entrega. Solo lo que el runtime importa
 
-
-
 # scikit-learn pinneado EXACTO: el .joblib es version-sensitive
 scikit-learn==1.5.2
 
