@@ -24,7 +24,8 @@ stages:
           - train.n_estimators
           - train.max_depth
     outs:
-      - models/churn_model_v2.joblib
+      - models/churn_model_v2.joblib:
+          cache: false
     metrics:
       - reports/train_metrics.json:
           cache: false

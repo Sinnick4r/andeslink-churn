@@ -2,3 +2,8 @@
 # Los notebooks siguen versionados, solo no cuentan para el % de lenguajes
 # Eso es porque los notebook son chicos pero muy pesados en cuanto a graficos, distorcionan las estadisticas
 notebooks/*.ipynb linguist-detectable=false
+*.joblib binary
+Makefile text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf

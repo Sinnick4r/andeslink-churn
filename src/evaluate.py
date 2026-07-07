@@ -119,7 +119,7 @@ def evaluate_on_test(
     assert len(y_pred) == len(y_test), "Cantidad de predicciones no coincide con test"
 
     metrics = {
-        "model": str(model_path),
+        "model": model_path.as_posix(),
         "model_name": model_name,
         "threshold": threshold,
         "test_size": len(y_test),
@@ -131,8 +131,9 @@ def evaluate_on_test(
         "support_class1": int(report["1"]["support"]),
     }
 
-    with open(METRICS_PATH, "w") as f:
+    with open(METRICS_PATH, "w", newline="\n") as f:
         json.dump(metrics, f, indent=2)
+        f.write("\n")
     print(f"\n metricas guardadas en {METRICS_PATH}")
 
     return metrics

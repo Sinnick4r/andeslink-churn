@@ -336,8 +336,9 @@ def run_experiment() -> None:
 
         # Log comparativa de los 3 modelos como artifact JSON
         metrics_path = REPORTS_DIR / "train_metrics.json"
-        with open(metrics_path, "w") as f:
+        with open(metrics_path, "w", newline="\n") as f:
             json.dump(metrics_payload, f, indent=2)
+            f.write("\n")
         mlflow.log_artifact(str(metrics_path))
 
     # smoke test del artefacto serializado

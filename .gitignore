@@ -4,7 +4,6 @@ data/raw/*
 !data/raw/*.dvc
 data/processed/
 data/current/
-models/*.joblib
 
 # MLflow (runs locales, pesados)
 mlruns/

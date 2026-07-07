@@ -52,8 +52,8 @@ clean:
 pull:
 	dvc pull models/churn_model_v2.joblib
 
-up-build: pull
+up-build: 
 	docker compose up -d --build
 
-up: pull
+up: 
 	docker compose up -d
