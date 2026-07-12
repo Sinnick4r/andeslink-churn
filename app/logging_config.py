@@ -1,7 +1,6 @@
 # Configuración de logging con loguru
 
 
-
 import sys
 
 from loguru import logger
@@ -10,8 +9,8 @@ from app.config import settings
 
 
 def configure_logging() -> None:
-    #configura el sink global de loguru.
-  
+    # configura el sink global de loguru.
+
     logger.remove()
 
     if settings.is_production:

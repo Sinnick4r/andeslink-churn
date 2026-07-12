@@ -63,6 +63,7 @@ class PredictionResponse(BaseModel):
     qué condiciones se hizo la predicción - útil para post-mortem y comparación
     entre versiones del modelo.
     """
+
     # protected_namespaces=() habilita el campo ``model_version`` sin tirar el
     # warning de pydantic por el prefijo reservado ``model_``.
     model_config = ConfigDict(protected_namespaces=())

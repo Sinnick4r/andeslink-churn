@@ -76,8 +76,8 @@ def record_prediction(
     duration_seconds: float,
     model_version: str,
 ) -> None:
-    #Actualiza las metricas de una inferencia individual
-  
+    # Actualiza las metricas de una inferencia individual
+
     assert predicted_class in (0, 1), f"clase fuera de dominio: {predicted_class}"
     assert 0.0 <= probability <= 1.0, f"probabilidad fuera de [0,1]: {probability}"
     assert duration_seconds >= 0.0, f"duracion negativa: {duration_seconds}"

@@ -55,7 +55,7 @@ from gui.streamlit_app import (  # noqa: E402
 
 @pytest.fixture
 def patch_httpx(monkeypatch: pytest.MonkeyPatch):
-    #Permite reemplazar httpx.get o httpx.post con MockTransport
+    # Permite reemplazar httpx.get o httpx.post con MockTransport
 
     def _patch(method: str, status: int, body: dict | None = None, raise_exc: type | None = None):
         def handler(request: httpx.Request) -> httpx.Response:
@@ -77,7 +77,7 @@ def patch_httpx(monkeypatch: pytest.MonkeyPatch):
     return _patch
 
 
-#check_api_health
+# check_api_health
 
 
 def test_health_ok_returns_body(patch_httpx) -> None:
@@ -109,7 +109,7 @@ def test_health_timeout_friendly_message(patch_httpx) -> None:
     assert err is not None and "imeout" in err
 
 
-#call_predict
+# call_predict
 
 
 def test_predict_200_returns_body(patch_httpx) -> None:
@@ -150,7 +150,7 @@ def test_predict_connect_error_uses_zero_sentinel(patch_httpx) -> None:
 
 
 def test_payload_casts_numpy_to_native_python() -> None:
-    #Streamlit puede devolver np.int64/np.float64; la API rechaza con strict=True
+    # Streamlit puede devolver np.int64/np.float64; la API rechaza con strict=True
     np = pytest.importorskip("numpy")
 
     form_values = dict(DEFAULT_VALUES)

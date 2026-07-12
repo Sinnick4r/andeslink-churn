@@ -1,6 +1,6 @@
 """
 Registro de inferencias para el monitoreo de datos
-Graba en un JSON las features de entrada y el resultado de cada prediccion, 
+Graba en un JSON las features de entrada y el resultado de cada prediccion,
 para analizar el data drift con evidently. El request_id es el puente de
 trazabilidad entre los dos planos el json y el log
 """
@@ -28,7 +28,7 @@ def record_inference(
     model_version: str,
     request_id: str,
 ) -> bool:
-    #Escribe una linea JSONL con la inferencia, retorna True si persistio
+    # Escribe una linea JSONL con la inferencia, retorna True si persistio
 
     record = {
         "timestamp": datetime.now(UTC).isoformat(),
