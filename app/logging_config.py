@@ -1,10 +1,6 @@
-"""Configuración de logging con loguru .
+# Configuración de logging con loguru
 
-- JSON estructurado (``serialize=True``) en producción; human-readable en dev.
-- Sink a ``stdout`` para que ``docker logs`` capture la salida.
-- Nivel mínimo configurable por ``LOG_LEVEL``.
-- Nunca usar ``print()`` en código de producción.
-"""
+
 
 import sys
 
@@ -14,11 +10,8 @@ from app.config import settings
 
 
 def configure_logging() -> None:
-    """Configura el sink global de loguru.
-
-    Side effect: reemplaza todos los handlers previos de loguru.
-    Idempotente--> puede llamarse varias veces sin acumularse
-    """
+    #configura el sink global de loguru.
+  
     logger.remove()
 
     if settings.is_production:
