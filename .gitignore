@@ -43,3 +43,6 @@ Thumbs.db
 # Monitoreo
 monitoring/data/*
 !monitoring/data/.gitkeep
+
+#reporte de Evidently
+reports/drift_report.html
