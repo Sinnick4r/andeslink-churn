@@ -1,0 +1,92 @@
+# Reglas de Prometheus para el monitoreo de AndesLink Churn
+# Dos grupos: recording rules que precalculan los indicadores que mira el equipo,
+# y alertas que se evaluan sobre esos indicadores
+#
+# Las alertas se ven en Prometheus (pestania Alerts) pasando de Inactive a Pending
+# a Firing. No hay Alertmanager: el alcance es la deteccion y la visualizacion, el
+# ruteo a notificaciones queda fuera del proyecto
+#
+# Nota sobre la tasa de error: agrupa 4xx y 5xx como en el dashboard. Un pico
+# dominado por 4xx (sobre todo 422) suele ser un problema de integracion del
+# cliente; uno con 5xx apunta al servidor. La accion correctiva difiere segun cual domine
+
+groups:
+  - name: churn_api_recording
+    interval: 15s
+    rules:
+      # tasa de requests por segundo, base para leer volumen y para el denominador
+      - record: churn_api:request_rate:rate1m
+        expr: sum(rate(http_requests_total{job="churn-api"}[1m]))
+
+      # proporcion de respuestas con error sobre el total
+      - record: churn_api:error_ratio:rate2m
+        expr: |
+          sum(rate(http_requests_total{job="churn-api", status=~"4..|5.."}[2m]))
+          /
+          sum(rate(http_requests_total{job="churn-api"}[2m]))
+
+      # latencia p95 de las requests HTTP
+      - record: churn_api:latency_p95:rate2m
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (le) (rate(http_request_duration_seconds_bucket{job="churn-api"}[2m]))
+          )
+
+      # proporcion de predicciones de la clase churn sobre el total
+      - record: churn_api:churn_ratio:rate2m
+        expr: |
+          sum(rate(churn_api_predictions_total{predicted_class="1"}[2m]))
+          /
+          sum(rate(churn_api_predictions_total[2m]))
+
+  - name: churn_api_alerts
+    rules:
+      # disponibilidad: el target dejo de responder al scrape
+      - alert: ChurnApiDown
+        expr: up{job="churn-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: churn-api
+        annotations:
+          summary: "La API de churn no responde"
+          description: "El target churn-api esta caido (up=0) hace mas de 1 minuto"
+
+      # salud operacional: error rate sostenido por encima del umbral
+      - alert: ChurnApiHighErrorRate
+        expr: churn_api:error_ratio:rate2m > 0.20
+        for: 1m
+        labels:
+          severity: warning
+          service: churn-api
+        annotations:
+          summary: "Tasa de error alta en la API de churn"
+          description: >
+            La tasa de error (4xx+5xx) es {{ $value | humanizePercentage }} hace mas de
+            1 minuto. Revisar si dominan 4xx (integracion del cliente) o 5xx (servidor)
+
+      # degradacion de performance: la latencia p95 se fue por encima del umbral
+      - alert: ChurnApiHighLatency
+        expr: churn_api:latency_p95:rate2m > 0.4
+        for: 2m
+        labels:
+          severity: warning
+          service: churn-api
+        annotations:
+          summary: "Latencia alta en la API de churn"
+          description: "La latencia p95 es {{ $value | humanizeDuration }} hace mas de 2 minutos"
+
+      # comportamiento del modelo: la proporcion de churn predicho se disparo
+      - alert: ChurnPredictionSpike
+        expr: churn_api:churn_ratio:rate2m > 0.65
+        for: 2m
+        labels:
+          severity: warning
+          service: churn-api
+        annotations:
+          summary: "Pico en la proporcion de churn predicho"
+          description: >
+            La proporcion de churn predicho es {{ $value | humanizePercentage }} hace mas
+            de 2 minutos. Posible drift de entrada o cambio de poblacion, conviene correr
+            el reporte de Evidently para confirmar

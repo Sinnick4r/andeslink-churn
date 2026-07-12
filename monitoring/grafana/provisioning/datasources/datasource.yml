@@ -1,0 +1,15 @@
+# Provisioning del datasource de Prometheus en Grafana
+# Se carga automaticamente al arrancar, sin configuracion manual en la UI
+# El uid fijo permite que el dashboard referencie el datasource de forma estable
+
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    uid: prometheus
+    access: proxy
+    # Grafana habla con Prometheus por el DNS interno de Docker
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false

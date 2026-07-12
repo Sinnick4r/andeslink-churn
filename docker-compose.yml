@@ -1,8 +1,8 @@
 # Orquestacion local del stack del proyecto
-# dos servicios: api (FastAPI) y gui (Streamlit), conectados internamente por docker. 
+# dos servicios: api (FastAPI) y gui (Streamlit), conectados internamente por docker.
 #La gui consume a la api a traves del DNS interno (http://api:8000), no por localhost
 
- 
+
 services:
   api:
     container_name: andeslink-churn-api
@@ -11,10 +11,10 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
- 
+
     networks:
       - internal
- 
+
     # Hardening del container
     security_opt:
       - no-new-privileges:true
@@ -23,19 +23,19 @@ services:
       - /tmp:size=64m
     mem_limit: 512m
     cpus: "1.0"
- 
+
     environment:
       MODEL_PATH: /app/models/churn_model_v2.joblib
       MODEL_VERSION: v2
       THRESHOLD: "0.441444"
       ENV: production
       LOG_LEVEL: INFO
- 
+
     # Puerto expuesto al host para que el evaluador pueda probar la API
     # directamente con curl o Postman ademas de la GUI
     ports:
       - "8000:8000"
- 
+
     healthcheck:
       test:
         - "CMD"
@@ -46,7 +46,7 @@ services:
       timeout: 5s
       retries: 3
       start_period: 20s
- 
+
   gui:
     container_name: andeslink-churn-gui
     image: andeslink-churn-gui:v2
@@ -54,16 +54,16 @@ services:
       context: .
       dockerfile: Dockerfile.gui
     restart: unless-stopped
- 
+
     # La GUI espera a que la API este healthy antes de arrancar
     # Si la API falla en su startup, la GUI no se levanta
     depends_on:
       api:
         condition: service_healthy
- 
+
     networks:
       - internal
- 
+
     # Mismo hardening que la API
     # tmpfs en /tmp soporta el HOME=/tmp del Dockerfile.gui: ahi vive
     # la config interna de Streamlit con el filesystem read_only
@@ -74,15 +74,15 @@ services:
       - /tmp:size=64m
     mem_limit: 512m
     cpus: "1.0"
- 
+
     environment:
       # Resolucion de la API por DNS interno de docker
       # No usar localhost: ambos containers tienen su propio loopback
       API_URL: http://api:8000
- 
+
     ports:
       - "8501:8501"
- 
+
     healthcheck:
       test:
         - "CMD"
@@ -93,10 +93,76 @@ services:
       timeout: 5s
       retries: 3
       start_period: 20s
- 
+
+  # Prometheus: recoleccion de metricas tecnicas de la API
+  # scrapea api:8000/metrics por la red interna segun monitoring/prometheus/prometheus.yml
+  prometheus:
+    container_name: andeslink-churn-prometheus
+    image: prom/prometheus:v2.54.0
+    restart: unless-stopped
+
+    # arranca cuando la API ya esta healthy, asi el primer scrape encuentra el target
+    depends_on:
+      api:
+        condition: service_healthy
+
+    networks:
+      - internal
+
+    mem_limit: 512m
+
+    # config de scrape montada read-only + volumen para las series temporales
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/rules.yml:/etc/prometheus/rules.yml:ro
+      - prometheus_data:/prometheus
+    # puerto expuesto al host para inspeccionar targets y correr PromQL en la demo
+    ports:
+      - "9090:9090"
+
+  # Grafana: dashboards operacionales sobre los datos de Prometheus
+  # datasource y dashboards se cargan por provisioning, sin pasos manuales en la UI
+  grafana:
+    container_name: andeslink-churn-grafana
+    image: grafana/grafana:11.2.0
+    restart: unless-stopped
+
+    depends_on:
+      prometheus:
+        condition: service_started
+
+    networks:
+      - internal
+
+    mem_limit: 512m
+
+    # provisioning como codigo: datasource + provider + dashboards en JSON
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+
+    environment:
+      # credenciales validas solo para el entorno local de evaluacion
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      # acceso anonimo de solo lectura para abrir el dashboard sin login
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_NAME: "Main Org."
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      # define el deshboard de inicio para que al abrir localhost:3000, se vea directamente
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: "/var/lib/grafana/dashboards/churn_api_overview.json"
+
+    ports:
+      - "3000:3000"
+
 # Red interna nombrada explicitamente para hacer obvia la topologia
 # Los containers se resuelven entre si por el nombre del servicio:
 # desde gui se accede a la api con http://api:8000
 networks:
   internal:
     driver: bridge
+
+# Volumen nombrado para persistir las series temporales de Prometheus entre reinicios
+volumes:
+  prometheus_data:

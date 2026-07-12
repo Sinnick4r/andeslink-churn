@@ -1,0 +1,17 @@
+# Provider que carga los dashboards en JSON desde el filesystem al arrancar
+# Los JSON viven en /var/lib/grafana/dashboards (montado por el compose)
+# separado de esta carpeta de provisioning para que Grafana no intente
+# parsear este propio yml como si fuera un dashboard
+
+apiVersion: 1
+
+providers:
+  - name: churn-dashboards
+    orgId: 1
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: false
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false
