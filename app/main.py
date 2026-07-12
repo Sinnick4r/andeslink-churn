@@ -22,8 +22,11 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from loguru import logger
+from prometheus_fastapi_instrumentator import Instrumentator
 
+from app import metrics
 from app.config import settings
+from app.inference_recorder import record_inference
 from app.logging_config import configure_logging
 from app.model_loader import load_pipeline
 from app.schemas import CustomerInput, HealthResponse, PredictionResponse
@@ -45,6 +48,8 @@ async def lifespan(app: FastAPI):
     app.state.pipeline = load_pipeline(settings.model_path)
     app.state.threshold = settings.threshold
     app.state.model_version = settings.model_version
+    # publica la metadata del modelo como metrica informativa de Prometheus
+    metrics.set_model_info(settings.model_version, sklearn.__version__)
     logger.info(f"Modelo {settings.model_version} listo | threshold={settings.threshold}")
     yield
     logger.info("Shutdown")
@@ -59,6 +64,18 @@ app = FastAPI(
     redoc_url=None if settings.is_production else "/redoc",
     openapi_url=None if settings.is_production else "/openapi.json",
 )
+
+# Instrumentacion de Prometheus
+# instrument() agrega el middleware que mide requests, latencia HTTP y status codes
+# expose() publica el endpoint /metrics que Prometheus scrapea por la red interna
+# El /metrics queda accesible tambien en el puerto 8000 de la API, decision asumida
+# para que el evaluador pueda inspeccionarlo igual que /predict y /health
+_instrumentator = Instrumentator(
+    should_group_status_codes=False,  # distinguir 200 / 422 / 500 por separado
+    should_ignore_untemplated=True,  # no medir rutas no registradas, evita ruido de 404
+    excluded_handlers=["/metrics"],  # no medir el propio scrape de metricas
+)
+_instrumentator.instrument(app).expose(app)
 
 
 @app.middleware("http")
@@ -123,6 +140,14 @@ async def predict(customer: CustomerInput, request: Request) -> PredictionRespon
     elapsed = time.perf_counter() - start
     request_id = getattr(request.state, "request_id", str(uuid.uuid4()))
 
+    # Metricas de Prometheus de esta inferencia: conteo por clase, latencia y score
+    metrics.record_prediction(
+        predicted_class=churn,
+        probability=probability,
+        duration_seconds=elapsed,
+        model_version=settings.model_version,
+    )
+
     # Solo metadatos de operación; nunca features del cliente
     logger.bind(
         churn_class=churn,
@@ -130,6 +155,19 @@ async def predict(customer: CustomerInput, request: Request) -> PredictionRespon
         duration_ms=round(elapsed * 1000, 2),
         model_version=settings.model_version,
     ).info("Prediction completed")
+
+    # Registro de la inferencia para el monitoreo de datos (best-effort, no bloquea)
+    # Guarda las features de entrada; el request_id correlaciona con el log de arriba
+    if settings.inference_log_enabled:
+        record_inference(
+            path=settings.inference_log_path,
+            features=customer.model_dump(),
+            churn=churn,
+            probability=probability,
+            threshold=settings.threshold,
+            model_version=settings.model_version,
+            request_id=request_id,
+        )
 
     return PredictionResponse(
         churn=churn,

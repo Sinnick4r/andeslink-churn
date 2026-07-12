@@ -22,6 +22,6 @@ joblib==1.4.2
 # Logging estructurado.
 loguru==0.7.2
 
-# NOTA: httpx vive en requirements-ci.txt (solo se usa para el TestClient en tests).
-# NOTA: prometheus-fastapi-instrumentator / prometheus-client se agregan cuando se
-#       cablee el endpoint /metrics
+# Prometheus
+prometheus-fastapi-instrumentator==7.0.0
+prometheus-client==0.21.0

@@ -14,3 +14,7 @@ fastapi==0.115.0
 httpx==0.27.2
 pydantic==2.9.0
 loguru==0.7.2
+
+# Prometheus
+prometheus-fastapi-instrumentator==7.0.0
+prometheus-client==0.21.0

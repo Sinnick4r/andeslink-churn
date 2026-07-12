@@ -39,3 +39,7 @@ Thumbs.db
 # DVC cache (pesado, no va a git)
 .dvc/cache/
 .dvc/tmp/
+
+# Monitoreo
+monitoring/data/*
+!monitoring/data/.gitkeep

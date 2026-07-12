@@ -1,8 +1,6 @@
-"""Confi¡ central de la API
-
-Toda la configuración git log: no hay credenciales, rutas absolutas ni secretos
-hardcodeados. Se materializa una instancia inmutable ``settings`` al
-importar el módulo.
+"""config de la API: no hay credenciales, rutas absolutas ni cosas
+hardcodeadas. Unica instancia inmutable ``settings`` al
+importar.
 """
 
 from __future__ import annotations
@@ -18,9 +16,18 @@ from typing import Final
 # por eso el valor calibrado se inyecta por entorno (compose) con este default.
 DEFAULT_MODEL_PATH: Final[str] = "models/churn_model_v2.joblib"
 DEFAULT_MODEL_VERSION: Final[str] = "v2"
-DEFAULT_THRESHOLD: Final[float] = 0.441444  # F1 establecido en E1
+DEFAULT_THRESHOLD: Final[float] = 0.441444  # F1-óptimo en val (LogisticRegression, E1)
 DEFAULT_ENV: Final[str] = "dev"
 DEFAULT_LOG_LEVEL: Final[str] = "INFO"
+
+# Registro de inferencias para el monitoreo de datos (Evidently)
+# Persiste las features de entrada de cada prediccion en JSONL, en un almacen
+# separado del log operacional. Se apaga con INFERENCE_LOG_ENABLED=false
+DEFAULT_INFERENCE_LOG_ENABLED: Final[str] = "true"
+DEFAULT_INFERENCE_LOG_PATH: Final[str] = "monitoring/data/inferences.jsonl"
+
+# valores que se interpretan como verdadero al leer el flag desde el entorno
+_TRUE_VALUES: Final[frozenset[str]] = frozenset({"1", "true", "yes", "on"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -32,6 +39,8 @@ class Settings:
     threshold: float
     env: str
     log_level: str
+    inference_log_enabled: bool
+    inference_log_path: Path
 
     def __post_init__(self) -> None:
         # Validaciones de invariante ≥2 assertions por función no trivial).
@@ -55,6 +64,11 @@ def load_settings() -> Settings:
         threshold=float(os.environ.get("THRESHOLD", DEFAULT_THRESHOLD)),
         env=os.environ.get("ENV", DEFAULT_ENV),
         log_level=os.environ.get("LOG_LEVEL", DEFAULT_LOG_LEVEL),
+        inference_log_enabled=os.environ.get("INFERENCE_LOG_ENABLED", DEFAULT_INFERENCE_LOG_ENABLED)
+        .strip()
+        .lower()
+        in _TRUE_VALUES,
+        inference_log_path=Path(os.environ.get("INFERENCE_LOG_PATH", DEFAULT_INFERENCE_LOG_PATH)),
     )
 
 
