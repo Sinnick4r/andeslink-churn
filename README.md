@@ -1,155 +1,244 @@
 [![CI](https://github.com/Sinnick4r/andeslink-churn/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Sinnick4r/andeslink-churn/actions/workflows/ci.yml)
-[![Python](https://img.shields.io/badge/python-3.11-blue)](https://www.python.org/)
-![Version](https://img.shields.io/badge/version-1.0-green)
-[![DVC Data](https://img.shields.io/badge/DVC-945DD6?style=flat&logo=dvc&logoColor=white)](https://dvc.org)
-[![Ruff](https://img.shields.io/badge/lint-ruff-261230)](https://github.com/astral-sh/ruff)
+![Python](https://img.shields.io/badge/Python-3.11-blue)
+![License](https://img.shields.io/badge/License-MIT-green)
 
+# AndesLink Churn MLOps
 
-### Trabajo Practico: Predicción de Churn
- 
-Proyecto de **MLOps end-to-end** para el Laboratorio de Minería de Datos.
-Resuelve un caso de clasificación binaria de abandono de clientes (churn) para
-la empresa **AndesLink Servicios Digitales S.A.**, cubriendo el ciclo completo:
-entrenamiento reproducible, despliegue como API + GUI containerizada, y
-monitoreo técnico y de datos.
- 
-**Estado actual:** Entrega 1 (Entrenamiento) y Entrega 2 (Despliegue) cerradas.
-Entrega 3 (Monitoreo) en desarrollo.
- 
----
- 
-## Información del proyecto
- 
-- **Materia:** Laboratorio de Minería de Datos
-- **Institución:** ISTEA
-- **Profesor:** Diego Mosquera
-- **Alumno:** Emilio Gomez Lencina
-- **Modalidad:** trabajo individual
----
- 
-## Stack
- 
-| Capa | Herramientas |
-|------|--------------|
-| Entrenamiento | Python 3.11, scikit-learn 1.5.2, pandas 2.2, numpy 1.26 |
-| Tracking y experimentos | MLflow 2.17 (file backend en `mlruns/`) |
-| Pipeline y versionado | DVC 3.55 (remote público en Backblaze B2) |
-| API de inferencia | FastAPI 0.115, Pydantic 2.9, uvicorn 0.32, loguru 0.7 |
-| GUI | Streamlit 1.39, httpx 0.27 |
-| Despliegue | Docker + Docker Compose v2 |
-| Calidad de código | ruff 0.6, pytest 8.3 |
- 
----
- 
-## Uso
+Proyecto de MLOps para predecir el abandono de clientes de AndesLink Servicios Digitales S.A., una empresa simulada de servicios por suscripción
 
-### Requisitos previos
+La solución cubre el ciclo completo de Machine Learning:
 
-- **Docker** con **Docker Compose v2** (el comando es `docker compose`, con espacio, no el antiguo `docker-compose`).
-- **DVC** para traer el modelo entrenado desde el remote público (el `.joblib` no está versionado en git, se descarga aparte).
-- **make** (opcional): si no esta disponible, al final de esta seccion estan    n los comandos equivalentes.
+- preparación y versionado de datos
+- entrenamiento y evaluación del modelo
+- registro de experimentos
+- API de inferencia
+- interfaz gráfica
+- despliegue con contenedores
+- pruebas automáticas
+- monitoreo técnico y detección de drift
 
-### Levantar el sistema (E1 + E2)
+## Resultados del modelo
+
+Se compararon regresión logística, Random Forest e HistGradientBoosting. La regresión logística fue seleccionada por ofrecer un rendimiento similar al mejor modelo con menor complejidad.
+
+| Métrica de prueba | Resultado |
+|---|---:|
+| F1 | 0.6020 |
+| Recall de churn | 0.7853 |
+| ROC-AUC | 0.7561 |
+| PR-AUC | 0.6155 |
+| Umbral de decisión | 0.441444 |
+
+El modelo detecta aproximadamente 8 de cada 10 clientes que abandonan el servicio en el conjunto de prueba.
+
+## Arquitectura
+
+El sistema está formado por los siguientes componentes:
+
+| Componente | Tecnología | Función |
+|---|---|---|
+| Entrenamiento | scikit-learn | Preparación, entrenamiento y evaluación |
+| Trazabilidad | DVC y MLflow | Versionado del pipeline y registro de experimentos |
+| API | FastAPI | Exposición del modelo mediante `/predict` |
+| Interfaz | Streamlit | Formulario para realizar predicciones |
+| Despliegue | Docker Compose | Ejecución local de los servicios |
+| Métricas | Prometheus | Recolección y evaluación de métricas |
+| Dashboard | Grafana | Visualización del estado del sistema |
+| Drift | Evidently | Comparación entre datos de referencia e inferencias |
+| Calidad | pytest y Ruff | Pruebas automáticas y análisis estático |
+
+## Ejecución
+
+### Requisitos
+
+- Git
+- Docker con Docker Compose v2
+- DVC
+- Conda, solo para entrenamiento, pruebas y scripts locales
+
+### Descargar el proyecto
 
 ```bash
 git clone https://github.com/Sinnick4r/andeslink-churn.git
 cd andeslink-churn
 ```
 
-Forma recomendada, con los targets de `make`:
+El modelo serializado ya esta incluido en el repositorio y se baja al clonar.
+
+### Levantar los servicios
 
 ```bash
-make up-build   # primera vez: trae el modelo y construye las imágenes
-make up         # arranques siguientes: levanta sin reconstruir
-```
-
-Si `make` no está disponible, los comandos equivalentes son:
-
-```bash
-dvc pull models/churn_model_v2.joblib
 docker compose up -d --build
 ```
-> El `dvc pull` descarga el modelo ya entrenado en E1 (`churn_model_v2.joblib`), así que no hace falta entrenar nada para usar el sistema: el despliegue de E2 consume ese artefacto directamente. El entrenamiento solo es necesario si se quiere regenerar el modelo desde cero ().
 
-A los ~30 segundos el stack queda accesible en:
+Una vez iniciados los contenedores:
 
-- **GUI**: http://localhost:8501
-- **API**: http://localhost:8000 (endpoints `/health` y `/predict`)
+| Servicio | Dirección |
+|---|---|
+| GUI | http://localhost:8501 |
+| API | http://localhost:8000 |
+| Estado de la API | http://localhost:8000/health |
+| Métricas de la API | http://localhost:8000/metrics |
+| Prometheus | http://localhost:9090 |
+| Grafana | http://localhost:3000 |
 
-Para bajar el stack: `docker compose down`.
- 
- ### Evidencia de funcionamiento
+El dashboard de Grafana se carga automaticamente y permite acceso de solo lectura sin iniciar sesión.
 
-Construcción y arranque del stack con `make up-build` (build desde cero):
+Para verificar el estado de los contenedores:
 
-![make up-build construyendo y levantando el stack](reports/docker_compose.gif)
+```bash
+docker compose ps
+```
 
-Estado de salud: ambos containers `healthy` y la API respondiendo en `/health`:
+Para detener el sistema:
 
-![docker compose ps y curl al health endpoint](reports/chequeo.gif)
+```bash
+docker compose down
+```
 
-Uso de la GUI: predicción individual de punta a punta consumiendo la API:
+## Monitoreo
 
-![GUI Streamlit haciendo una predicción](reports/GUI.gif)
+La API expone metricas de disponibilidad, solicitudes, errores, latencia y comportamiento de las predicciones.
 
----
-### Reentrenar el modelo (opcional)
+Prometheus recolecta estas metricas cada 15 segundos. 
 
-El modelo entrenado ya viene resuelto por DVC, así que esto **no es necesario para usar el sistema**. Solo hace falta si se quiere regenerar el modelo desde cero a partir del pipeline de training versionado.
+Grafana presenta los principales indicadores mediante un dashboard configurado automaticamente
 
-Se ejecuta dentro del entorno conda del proyecto (no desde `base`, las versiones difieren):
+### Generar tráfico de prueba
+
+```bash
+python scripts/generate_traffic.py -n 200 --delay 0.25
+```
+
+El script envia solicitudes válidas y algunos casos invalidos para generar actividad observable en Prometheus y Grafana.
+
+### Generar tráfico con drift
+
+```bash
+python scripts/generate_drift.py -n 150 --delay 0.2
+```
+
+Este escenario genera clientes con distribuciones diferentes de las utilizadas durante el entrenamiento
+
+### Crear el reporte de Evidently
+
+```bash
+python scripts/drift_report.py
+```
+
+El resultado se guarda en:
+
+```text
+reports/drift_report.html
+```
+
+El reporte compara las inferencias registradas con el dataset de referencia y muestra las variables que presentan cambios relevantes
+
+## Reproducir el entrenamiento
+
+Crear y activar el entorno:
 
 ```bash
 conda env create -f environment.yml
 conda activate andeslink-churn
+dvc pull
+```
+
+Ejecutar el pipeline completo:
+
+```bash
 dvc repro
 ```
 
-`dvc repro` reconstruye el pipeline completo (preparación de datos, entrenamiento y evaluación) y regenera `churn_model_v2.joblib`. Con `random_state=42`, el modelo reproduce el joblib original que esta en el bucket de Backclaze
- 
+El pipeline contiene tres etapas:
 
- 
- ---
+```text
+prepare -> train -> evaluate
+```
 
-## Estructura
+Las métricas generadas pueden consultarse con:
+
+```bash
+dvc metrics show
+```
+
+Los experimentos locales de MLflow pueden visualizarse mediante:
+
+```bash
+mlflow ui
+```
+
+## Pruebas y calidad
+
+Con el entorno Conda activo:
+
+```bash
+ruff check .
+pytest
+```
+
+La integración continua ejecuta estas verificaciones automáticamente mediante GitHub Actions.
+
+## Estructura del repositorio
+
+```text
+app/                    API FastAPI y métricas
+gui/                    Interfaz Streamlit
+src/                    Preparación, entrenamiento y evaluación
+tests/                  Pruebas de API y GUI
+scripts/                Generadores de tráfico y reporte de drift
+monitoring/
+  prometheus/           Configuración y reglas PromQL
+  grafana/              Provisioning y dashboard
+data/                   Datos administrados con DVC
+models/                 Modelo serializado
+notebooks/              Análisis y validaciones
+reports/                Métricas, resultados e informe final
+docker-compose.yml      Orquestación de servicios
+dvc.yaml                Pipeline reproducible
+params.yaml             Parámetros de entrenamiento
+```
+
+## Documentación
+
+- [Informe técnico final](reports/informe_final.md)
+- [Notebook de análisis exploratorio](notebooks/01_EDA_churn_dataset.ipynb)
+- [Notebook de validación](notebooks/02_Validacion_pycaret.ipynb)
+- [Notebook de prueba del modelo](notebooks/03_Script_prediccion_churn.ipynb)
+
+## Solución de problemas
+
+### Algún puerto ya está siendo utilizado
+
+Verificar los puertos `8000`, `8501`, `9090` y `3000`, o detener el proceso que los esté ocupando antes de iniciar Docker Compose.
+
+### Evidently informa que no hay datos suficientes
+
+Primero deben generarse al menos 40 inferencias:
+
+```bash
+python scripts/generate_traffic.py -n 100
+python scripts/generate_drift.py -n 100
+```
+
+Después puede ejecutarse nuevamente:
+
+```bash
+python scripts/drift_report.py
+```
+
+### Un contenedor no inicia correctamente
+
+```bash
+docker compose ps
+docker compose logs api
+docker compose logs gui
+docker compose logs prometheus
+docker compose logs grafana
+```
+
+## Licencia
+
+Este proyecto se distribuye bajo la licencia MIT.
  
-`app/` contiene la API FastAPI con sus contratos Pydantic. `gui/` contiene la
-GUI Streamlit. `src/` tiene el código de training compartido con la API (feature
-engineering, anti training-serving skew). `tests/` cubre API y GUI con 18 tests.
-Los Dockerfiles separan API y GUI en imágenes independientes orquestadas por
-`docker-compose.yml`. Toda la documentación técnica vive en `reports/`.
- 
----
- 
-## Documentación técnica
- 
-| Documento | Contenido |
-|-----------|-----------|
-| [`reports/informe_e1.md`](reports/informe_e1.md) | EDA, comparación de modelos, calibración del threshold, decisiones de E1 |
-| [`reports/informe_e2.md`](reports/informe_e2.md) | Arquitectura del despliegue, contrato de la API, decisiones de E2 |
-| [`notebooks/01_EDA_churn_dataset.ipynb`](notebooks/01_EDA_churn_dataset.ipynb) | EDA detallado del dataset |
-| [`notebooks/02_Validacion_pycaret.ipynb`](notebooks/02_Validacion_pycaret.ipynb) | Validación cruzada del modelo con PyCaret |
-| [`notebooks/03_Script_prediccion_churn.ipynb`](notebooks/03_Script_prediccion_churn.ipynb) | Validación del modelo serializado |
- 
----
- 
-## Resumen de decisiones técnicas
- 
-**E1 (Entrenamiento)**: LogisticRegression seleccionado por regla de tolerancia
-F1 (RF marginalmente superior por 0.0013, dentro del ruido estadístico).
-Threshold calibrado a 0.441444 por curva precision-recall. Features derivadas
-`charges_per_month` y `tickets_per_year` compartidas entre training y serving.
-Split 64/16/20 estratificado con `random_state=42`. Detalle completo en
-[`informe_e1.md`](reports/informe_e1.md).
- 
-**E2 (Despliegue)**: dos containers (API + GUI) en red interna de Docker,
-comunicación por DNS interno. Pydantic con `strict=True` y `Literal` en español
-como Capa 1 de defensa de categorías, combinado con `handle_unknown="ignore"`
-del OneHotEncoder como Capa 2. Threshold inyectado por env var. Hardening
-uniforme (multi-stage, usuario no-root sin shell, filesystem read-only).
-Trazabilidad por SHA-256 del modelo y `request_id` UUID4 por inferencia.
-Detalle completo en [`informe_e2.md`](reports/informe_e2.md).
- 
----
- 
-*actualización: 16/06/2026*
+*actualización: 12/07/2026*
