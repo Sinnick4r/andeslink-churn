@@ -33,14 +33,9 @@ smoke:
 
 # Suite de pytest (solo corre si existe carpeta tests/)
 test:
-	@if [ -d tests ]; then \
-		pytest; \
-	else \
-		echo "Carpeta tests/ no existe todavia. Skip."; \
-	fi
-
+	pytest
 # Pipeline completo en orden seguro: format primero, despues check
-all: format check smoke
+all: format fix check smoke
 
 # Limpieza de archivos generados
 clean:
