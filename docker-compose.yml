@@ -30,6 +30,11 @@ services:
       THRESHOLD: "0.441444"
       ENV: production
       LOG_LEVEL: INFO
+      INFERENCE_LOG_ENABLED: "true"
+      INFERENCE_LOG_PATH: /app/monitoring/data/inferences.jsonl
+    # registro de inferencias para el analisis de drift, unica escritura del container
+    volumes:
+      - ./monitoring/data:/app/monitoring/data
 
     # Puerto expuesto al host para que el evaluador pueda probar la API
     # directamente con curl o Postman ademas de la GUI
