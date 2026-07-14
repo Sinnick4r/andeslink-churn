@@ -7,64 +7,78 @@ Uso: python scripts/generate_drift.py -n 150 --delay 0.2
 import argparse
 import random
 import time
+from pathlib import Path
 
 import httpx
+import pandas as pd
 
 API_URL = "http://localhost:8000/predict"
 
-# poblaciones con pesos: la primera opcion domina y genera drift categorico visible
-CONTRACTS_W = (["mensual", "anual", "bianual"], [8, 1, 1])
-INTERNET_W = (["movil", "cable", "fibra", "ninguno"], [6, 2, 1, 1])
-REGIONS_W = (["sur", "centro", "norte", "oeste"], [7, 1, 1, 1])
-PAYMENTS = ["credito", "debito", "efectivo", "transferencia"]
+ROOT = Path(__file__).resolve().parents[1]
+REFERENCE_CSV = ROOT / "data" / "raw" / "churn_sintetico.csv"
+
+REFERENCE = pd.read_csv(REFERENCE_CSV)
 
 
 def build_drifted_payload() -> dict:
     # mismas claves y rangos validos que el trafico normal, distribuciones corridas
-    tenure = random.randint(1, 8)
-    monthly = round(random.uniform(100.0, 127.0), 2)
-    total = round(min(max(tenure * monthly * random.uniform(0.85, 1.15), 50.0), 9000.0), 2)
-    return {
-        "tenure_months": tenure,
-        "monthly_charge": monthly,
-        "total_charges": total,
-        "support_tickets": random.randint(5, 8),
-        "late_payments": random.randint(3, 5),
-        "avg_monthly_usage_gb": round(random.uniform(5.0, 40.0), 2),
-        "contract_type": random.choices(*CONTRACTS_W)[0],
-        "payment_method": random.choice(PAYMENTS),
-        "internet_service": random.choices(*INTERNET_W)[0],
-        "has_streaming": random.choices([0, 1], weights=[8, 2])[0],
-        "has_security_pack": random.choices([0, 1], weights=[9, 1])[0],
-        "num_products": 1,
-        "region": random.choices(*REGIONS_W)[0],
-        "customer_age": random.randint(18, 30),
-        "is_promo": random.choices([1, 0], weights=[8, 2])[0],
+    row = REFERENCE.sample(n=1).iloc[0]
+
+    payload = {
+        "tenure_months": int(row["tenure_months"]),
+        "monthly_charge": float(row["monthly_charge"]),
+        "total_charges": float(row["total_charges"]),
+        "support_tickets": int(row["support_tickets"]),
+        "late_payments": int(row["late_payments"]),
+        "avg_monthly_usage_gb": float(row["avg_monthly_usage_gb"]),
+        "contract_type": str(row["contract_type"]),
+        "payment_method": str(row["payment_method"]),
+        "internet_service": str(row["internet_service"]),
+        "has_streaming": int(row["has_streaming"]),
+        "has_security_pack": int(row["has_security_pack"]),
+        "num_products": int(row["num_products"]),
+        "region": str(row["region"]),
+        "customer_age": int(row["customer_age"]),
+        "is_promo": int(row["is_promo"]),
     }
+
+    payload["tenure_months"] = random.randint(1, 8)
+    payload["monthly_charge"] = round(random.uniform(100.0, 127.0), 2)
+    payload["support_tickets"] = random.randint(5, 8)
+    payload["late_payments"] = random.randint(3, 5)
+    payload["contract_type"] = random.choices(
+        ["mensual", "anual", "bianual"],
+        weights=[8, 1, 1],
+    )[0]
+
+    return payload
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Trafico con drift contra la API de churn")
-    parser.add_argument("-n", type=int, default=150, help="cantidad de requests")
-    parser.add_argument("--delay", type=float, default=0.2, help="pausa entre requests (s)")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-n", type=int, default=150)
+    parser.add_argument("--delay", type=float, default=0.2)
     args = parser.parse_args()
 
     ok = errors = 0
+
     with httpx.Client(timeout=5.0) as client:
         for i in range(1, args.n + 1):
             try:
-                r = client.post(API_URL, json=build_drifted_payload())
-                if r.status_code == 200:
+                response = client.post(API_URL, json=build_drifted_payload())
+                if response.status_code == 200:
                     ok += 1
                 else:
                     errors += 1
             except httpx.HTTPError:
                 errors += 1
+
             if i % 25 == 0:
                 print(f"{i}/{args.n} enviados")
+
             time.sleep(args.delay)
 
-    print(f"fin: {ok} inferencias con drift registradas, {errors} fallidas")
+    print(f"fin: {ok} inferencias registradas, {errors} fallidas")
 
 
 if __name__ == "__main__":
